@@ -75,9 +75,9 @@ public static class DbContextExtensions
 
     private static void CreateConstraintIndexesAndPrimaryKeys(this ModelBuilder modelBuilder, Type type)
     {
-        var constraintIndexAttributes = type.GetCustomAttributes<ConstraintIndexAttribute>()
+        var constraintIndexAttributes = type.GetCustomAttributes<SqlConstraintIndexAttribute>()
             .ToList();
-        var customPkIndexAttribute = type.GetCustomAttribute<CustomPrimaryKeyAttribute>();
+        var customPkIndexAttribute = type.GetCustomAttribute<SqlPrimaryKeyAttribute>();
 
         if (constraintIndexAttributes.Any(m => m.IsClustered))
         {
@@ -114,7 +114,7 @@ public static class DbContextExtensions
     }
 
     private static void CreateCustomPrimaryKey(this ModelBuilder modelBuilder,
-        CustomPrimaryKeyAttribute? customPrimaryKeyAttribute, Type type, bool isClustered = true)
+        SqlPrimaryKeyAttribute? customPrimaryKeyAttribute, Type type, bool isClustered = true)
     {
         if (customPrimaryKeyAttribute is null)
         {
@@ -137,7 +137,7 @@ public static class DbContextExtensions
     }
 
     private static void CreateConstraintIndex(this ModelBuilder modelBuilder,
-        ConstraintIndexAttribute constraintIndexAttribute, Type type)
+        SqlConstraintIndexAttribute constraintIndexAttribute, Type type)
     {
         var name = constraintIndexAttribute.Name;
         var prefix = constraintIndexAttribute.IsUnique ? "UQ" : "IX";
