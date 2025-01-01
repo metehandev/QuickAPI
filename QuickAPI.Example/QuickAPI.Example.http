@@ -1,0 +1,6 @@
+@QuickAPI.Example_HostAddress = http://localhost:5020
+
+GET {{QuickAPI.Example_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

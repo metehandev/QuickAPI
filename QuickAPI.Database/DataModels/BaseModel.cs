@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using QuickAPI.Database.Attributes;
 
-namespace QuickAPI.Database.Models;
+namespace QuickAPI.Database.DataModels;
 
-public class BaseModel
+public abstract class BaseModel
 {
     public const int MAX_STR_LEN = 1073741823;
     
@@ -12,15 +12,19 @@ public class BaseModel
     public Guid Id { get; set; }
 
     [StringLength(100)]
-    public string Code { get; set; } = string.Empty; 
+    public string Name { get; set; } = string.Empty; 
 
     [StringLength(255)]
-    public string? Info { get; set; }
+    public string? Description { get; set; }
 
     [SqlDefaultValue("getdate()")]
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string CreatedBy { get; set; } = string.Empty;
+    
+    public DateTimeOffset? ModifiedAt { get; set; }
+    
+    public string? ModifiedBy { get; set; }
 
     [SqlDefaultValue("(0)")]
     public bool IsDeleted { get; set; }
