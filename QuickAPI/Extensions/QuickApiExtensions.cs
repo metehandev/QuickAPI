@@ -12,7 +12,7 @@ using QuickAPI.Settings;
 
 namespace QuickAPI.Extensions;
 
-public static class EndpointDefinitionsExtensions
+public static class QuickApiExtensions
 {
     private static void MapConfigurationSettings(this IServiceCollection services, params Type[] externalTypes)
     {
@@ -88,7 +88,7 @@ public static class EndpointDefinitionsExtensions
         method.Invoke(null, [services, configSection]);
     }
 
-    public static void MapEndpointDefinitions(this IServiceCollection services, bool automaticEndpointCreation = true,
+    public static void AddQuickApi(this IServiceCollection services, bool automaticEndpointCreation = true,
         params Type[] types)
     {
         services.MapHelpers(typeof(BaseModel), typeof(IHelper));
@@ -114,7 +114,7 @@ public static class EndpointDefinitionsExtensions
 
         var externalDefinitionTypes = types
             .Select(m => m.Assembly)
-            .Except([typeof(EndpointDefinitionsExtensions).Assembly])
+            .Except([typeof(QuickApiExtensions).Assembly])
             .SelectMany(m => m.ExportedTypes)
             .Where(m => m.IsAssignableTo(typeof(IDefinition)) && !m.IsAssignableTo(typeof(IEndpointDefinition))
                                                               && m is
@@ -161,7 +161,7 @@ public static class EndpointDefinitionsExtensions
 
         var externalEndpointTypes = types
             .Select(m => m.Assembly)
-            .Except([typeof(EndpointDefinitionsExtensions).Assembly])
+            .Except([typeof(QuickApiExtensions).Assembly])
             .SelectMany(m => m.ExportedTypes)
             .Where(m => m.IsAssignableTo(typeof(IEndpointDefinition))
                         && m is { IsInterface: false, IsAbstract: false, IsGenericType: false })
@@ -243,7 +243,7 @@ public static class EndpointDefinitionsExtensions
         endpointDefinitions.Add(endpointDefinition);
     }
 
-    public static void UseEndpointDefinitions(this WebApplication app)
+    public static void UseQuickApi(this WebApplication app)
     {
         var definitions = app.Services.GetRequiredService<IReadOnlyCollection<IDefinition>>();
         foreach (var endpointDefinition in definitions)
