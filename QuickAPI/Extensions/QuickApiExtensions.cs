@@ -99,17 +99,7 @@ public static class QuickApiExtensions
 
         var endpointDefinitions = new List<IDefinition>();
 
-        if (automaticEndpointCreation)
-        {
-            var baseModelTypes = types
-                .SelectMany(m => m.Assembly.ExportedTypes)
-                .Where(m => m.IsAssignableTo(typeof(BaseModel))
-                            && m is { IsInterface: false, IsAbstract: false }
-                            && m.GetCustomAttribute<EndpointDefinitionAttribute>() is { DtoType: null });
-
-            baseModelTypes.Execute(endpointBaseModel => services.RegisterBaseEndpointDefinition(
-                typeof(BaseEndpointDefinition<>), endpointBaseModel, endpointDefinitions));
-        }
+        
 
 
         var externalDefinitionTypes = types
@@ -157,6 +147,18 @@ public static class QuickApiExtensions
             var externalEndpoint = (IDefinition)ActivatorUtilities.CreateInstance(provider, type);
             externalEndpoint.DefineServices(services);
             endpointDefinitions.Add(externalEndpoint);
+        }
+        
+        if (automaticEndpointCreation)
+        {
+            var baseModelTypes = types
+                .SelectMany(m => m.Assembly.ExportedTypes)
+                .Where(m => m.IsAssignableTo(typeof(BaseModel))
+                            && m is { IsInterface: false, IsAbstract: false }
+                            && m.GetCustomAttribute<EndpointDefinitionAttribute>() != null);
+
+            baseModelTypes.Execute(endpointBaseModel => services.RegisterBaseEndpointDefinition(
+                typeof(BaseEndpointDefinition<>), endpointBaseModel, endpointDefinitions));
         }
 
         var externalEndpointTypes = types
@@ -211,11 +213,13 @@ public static class QuickApiExtensions
             return;
         }
 
-        var endpointDefinitionType = endpointDefinitionAttribute.DtoType is null
-            ? baseEndpointDefinitionType.MakeGenericType(endpointBaseModel)
-            : baseEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
+        var endpointDefinitionType = baseEndpointDefinitionType.MakeGenericType(endpointBaseModel);
+        // var endpointDefinitionType = endpointDefinitionAttribute.DtoType is null
+        //     ? baseEndpointDefinitionType.MakeGenericType(endpointBaseModel)
+        //     : baseEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
 
-        if (Activator.CreateInstance(endpointDefinitionType) is not IEndpointDefinition endpointDefinition)
+        var provider = services.BuildServiceProvider();
+        if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition endpointDefinition)
         {
             return;
         }
@@ -248,7 +252,7 @@ public static class QuickApiExtensions
         var definitions = app.Services.GetRequiredService<IReadOnlyCollection<IDefinition>>();
         foreach (var endpointDefinition in definitions)
         {
-            endpointDefinition.DefineEndpoints(app);
+            endpointDefinition.Define(app);
         }
     }
 }

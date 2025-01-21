@@ -3,12 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using QuickAPI.Attributes;
 
-namespace QuickAPI.Core;
+namespace QuickAPI.Core.Definitions;
 
 [DefinitionOrder(100)]
 public class SwaggerDefinition : IDefinition
 {
-    public void DefineEndpoints(WebApplication app)
+    public void Define(WebApplication app)
     {
         app.UseSwagger();
         app.UseSwaggerUI();

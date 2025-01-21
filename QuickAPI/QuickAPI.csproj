@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DevExtreme.AspNet.Data" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.12" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
     <PackageReference Include="EFCore.BulkExtensions" Version="8.1.2" />
 <!--    <PackageReference Include="Microsoft.AspNetCore.App.Ref" Version="8.0.11" />-->

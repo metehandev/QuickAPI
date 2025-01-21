@@ -20,7 +20,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     private readonly BaseContext _context;
     private readonly ILogger<BaseEndpointDefinition<T>> _logger;
 
-    protected Func<ClaimsPrincipal, int, Task>? OnBeforeGet;
+    protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGet;
     
     protected Func<ClaimsPrincipal, BindableDataSourceLoadOptions?, Task>? OnBeforeGetMany;
     
@@ -28,9 +28,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePut;
     
-    protected Func<ClaimsPrincipal, int, Task>? OnBeforeDelete;
+    protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDelete;
     
-    protected Func<ClaimsPrincipal, int, Task>? OnBeforeGetAsync;
+    protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGetAsync;
     
     protected Func<ClaimsPrincipal, BindableDataSourceLoadOptions?, Task>? OnBeforeGetManyAsync;
     
@@ -38,7 +38,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePutAsync;
     
-    protected Func<ClaimsPrincipal, int, Task>? OnBeforeDeleteAsync;
+    protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDeleteAsync;
     
     protected Func<T, Task>? OnAfterGet;
     
@@ -68,7 +68,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         _logger = logger;
     }
 
-    public override void DefineEndpoints(WebApplication app)
+    public override void Define(WebApplication app)
     {
         var type = typeof(T);
         var typeName = type.Name;
@@ -162,7 +162,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
     protected virtual async Task<IResult> GetAsync(
         ClaimsPrincipal claimsPrincipal,
-        int id)
+        Guid id)
     {
         try
         {
@@ -312,7 +312,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     protected virtual async Task<IResult> RemoveAsync(
         ILogger<BaseEndpointDefinition<T>> logger,
         ClaimsPrincipal claimsPrincipal,
-        int id)
+        Guid id)
     {
         try
         {

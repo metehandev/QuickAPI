@@ -5,7 +5,7 @@ namespace QuickAPI.Core;
 
 public interface IDefinition
 {
-    public void DefineEndpoints(WebApplication app);
+    public void Define(WebApplication app);
     
     public void DefineServices(IServiceCollection services);
 }

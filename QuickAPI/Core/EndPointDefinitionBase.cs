@@ -21,7 +21,7 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
     }
 
 
-    public abstract void DefineEndpoints(WebApplication app);
+    public abstract void Define(WebApplication app);
 
 
     public abstract void DefineServices(IServiceCollection services);
@@ -35,7 +35,7 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
             authorizedRoles = CommonRole;
         }
 
-        if (method != null && MethodRoles.TryGetValue(method, out var role))
+        if (method != null && MethodRoles.TryGetValue(method, out var role) && !string.IsNullOrEmpty(role))
         {
             authorizedRoles = role;
         }

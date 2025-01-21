@@ -14,17 +14,6 @@ public class EndpointDefinitionAttribute : Attribute
     public bool AutomaticEndpointCreation { get; set; } = true;
 
     /// <summary>
-    /// Default is true. Set to false if you want to override Automapper profiles for this model.
-    /// </summary>
-    public bool AutomaticMapping { get; set; } = true;
-
-    /// <summary>
-    /// Set a DtoType that is inherited from BaseDto if you want to use Dto's for default endpoints.
-    /// Or leave null if you do not want to use Dto's for default endpoints. The model itself will be used as Dto.
-    /// </summary>
-    public Type? DtoType { get; set; }
-
-    /// <summary>
     /// Set authorized role names if RequireAuthorization is true.
     /// </summary>
     public string CommonRole { get; set; } = string.Empty;
