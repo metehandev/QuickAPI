@@ -27,7 +27,7 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
     public abstract void DefineServices(IServiceCollection services);
 
 
-    private AuthorizationOptions GenerateAuthorizationOptions(HttpMethod? method = null)
+    protected AuthorizationOptions GenerateAuthorizationOptions(HttpMethod? method = null)
     {
         var authorizedRoles = string.Empty;
         if (!string.IsNullOrEmpty(CommonRole))

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using QuickAPI.Database.Core;
 using QuickAPI.Database.Data;
 using QuickAPI.Database.DataModels;
+using Swashbuckle.AspNetCore.Annotations;
 using static Microsoft.AspNetCore.Http.Results;
 
 namespace QuickAPI.Core.BaseConcretes;
@@ -21,43 +22,43 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     private readonly ILogger<BaseEndpointDefinition<T>> _logger;
 
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGet;
-    
-    protected Func<ClaimsPrincipal, BindableDataSourceLoadOptions?, Task>? OnBeforeGetMany;
-    
+
+    protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetMany;
+
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePost;
-    
+
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePut;
-    
+
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDelete;
-    
+
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGetAsync;
-    
-    protected Func<ClaimsPrincipal, BindableDataSourceLoadOptions?, Task>? OnBeforeGetManyAsync;
-    
+
+    protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetManyAsync;
+
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePostAsync;
-    
+
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePutAsync;
-    
+
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDeleteAsync;
-    
+
     protected Func<T, Task>? OnAfterGet;
-    
+
     protected Func<LoadResult, Task>? OnAfterGetMany;
-    
+
     protected Func<T, Task>? OnAfterPost;
-    
+
     protected Func<T, Task>? OnAfterPut;
-    
+
     protected Func<Task>? OnAfterDelete;
-    
+
     protected Func<T, Task>? OnAfterGetAsync;
-    
+
     protected Func<LoadResult, Task>? OnAfterGetManyAsync;
-    
+
     protected Func<T, Task>? OnAfterPostAsync;
-    
+
     protected Func<T, Task>? OnAfterPutAsync;
-    
+
     protected Func<Task>? OnAfterDeleteAsync;
 
     public BaseEndpointDefinition(
@@ -82,7 +83,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var get = app.MapGet($"/api/{typeName}", GetAsync)
                 .Produces<T>()
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.Get))
                 .WithMetadata(type)
                 .WithName($"Get{typeName}");
             getRouteHandlers.Add(get);
@@ -92,7 +93,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var getMany = app.MapGet($"/api/{groupName}", GetManyAsync)
                 .Produces<LoadResult>()
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.GetMany))
                 .WithMetadata(type)
                 .WithName($"Get{groupName}");
             getRouteHandlers.Add(getMany);
@@ -102,7 +103,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var post = app.MapPost($"/api/{typeName}", AddAsync)
                 .Produces<T>(302)
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.Post))
                 .WithMetadata(type)
                 .WithName($"Post{typeName}");
             postRouteHandlers.Add(post);
@@ -112,7 +113,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var put = app.MapPut($"/api/{typeName}", UpdateAsync)
                 .Produces<T>(302)
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.Put))
                 .WithMetadata(type)
                 .WithName($"Put{typeName}");
             putRouteHandlers.Add(put);
@@ -122,7 +123,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var delete = app.MapDelete($"/api/{typeName}", RemoveAsync)
                 .Produces(200)
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.Delete))
                 .WithMetadata(type)
                 .WithName($"Delete{typeName}");
             deleteRouteHandlers.Add(delete);
@@ -130,9 +131,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
         if (CrudOperation.HasFlag(CrudOperation.PostMany))
         {
-            var postMany = app.MapPost($"/api/{typeName}", AddManyAsync)
+            var postMany = app.MapPost($"/api/{groupName}", AddManyAsync)
                 .Produces<IEnumerable<T>>()
-                .WithTags(groupName)
+                .WithTags(groupName, nameof(CrudOperation.PostMany))
                 .WithMetadata(type)
                 .WithName($"Post{groupName}");
             postRouteHandlers.Add(postMany);
@@ -157,7 +158,6 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
     public override void DefineServices(IServiceCollection services)
     {
-        
     }
 
     protected virtual async Task<IResult> GetAsync(
@@ -170,7 +170,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnBeforeGet.Invoke(claimsPrincipal, id);
             }
-            
+
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
             _logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
@@ -184,7 +184,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnAfterGet.Invoke(item);
             }
-            
+
             OnAfterGetAsync?.Invoke(item);
 
             return Ok(item);
@@ -197,8 +197,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     }
 
     protected virtual async Task<IResult> GetManyAsync(
-        ClaimsPrincipal claimsPrincipal,
-        BindableDataSourceLoadOptions? options)
+        ClaimsPrincipal claimsPrincipal, 
+        BindableDataSourceLoadOptions options)
     {
         try
         {
@@ -206,7 +206,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnBeforeGetMany.Invoke(claimsPrincipal, options);
             }
-            
+
             OnBeforeGetManyAsync?.Invoke(claimsPrincipal, options);
 
             _logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
@@ -217,7 +217,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnAfterGetMany.Invoke(result);
             }
-            
+
             OnAfterGetManyAsync?.Invoke(result);
 
             return Ok(result);
@@ -237,26 +237,26 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var type = typeof(T);
             var typeName = type.Name;
-            
+
             if (OnBeforePost is not null)
             {
                 await OnBeforePost.Invoke(claimsPrincipal, item);
             }
-            
+
             OnBeforePostAsync?.Invoke(claimsPrincipal, item);
-            
+
             _logger.LogInformation("Adding new {TypeName}", typeName);
-            
+
             await _context.Set<T>().AddAsync(item);
             await _context.SaveChangesAsync();
-            
+
             if (OnAfterPost is not null)
             {
                 await OnAfterPost.Invoke(item);
             }
-            
+
             OnAfterPostAsync?.Invoke(item);
-            
+
             return CreatedAtRoute($"Get{typeName}", new { id = item.Id }, item);
         }
         catch (Exception ex)
@@ -276,20 +276,20 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnBeforePut.Invoke(claimsPrincipal, item);
             }
-            
+
             OnBeforePutAsync?.Invoke(claimsPrincipal, item);
-            
+
             var type = typeof(T);
             var typeName = type.Name;
             _logger.LogInformation("Updating {TypeName}", typeName);
-            
+
             var result = await _context.Set<T>().FindAsync(item.Id);
-            
+
             if (result is null)
             {
                 return NotFound();
             }
-            
+
             _context.Entry(result).CurrentValues.SetValues(item);
             await _context.SaveChangesAsync();
 
@@ -297,7 +297,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnAfterPut.Invoke(item);
             }
-            
+
             OnAfterPutAsync?.Invoke(item);
 
             return CreatedAtRoute($"Get{typeName}", new { id = item.Id }, item);
@@ -320,7 +320,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 await OnBeforeDelete.Invoke(claimsPrincipal, id);
             }
-            
+
             OnBeforeDeleteAsync?.Invoke(claimsPrincipal, id);
 
             logger.LogInformation("Deleting {TypeName} for id {Id}", typeof(T).Name, id);
@@ -329,10 +329,10 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             {
                 return NotFound();
             }
-            
+
             _context.Set<T>().Remove(result);
             await _context.SaveChangesAsync();
-            
+
             OnAfterDeleteAsync?.Invoke();
             if (OnAfterDelete is not null)
             {

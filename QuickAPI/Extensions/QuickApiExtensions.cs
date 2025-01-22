@@ -7,7 +7,7 @@ using QuickAPI.Core;
 using QuickAPI.Core.BaseConcretes;
 using QuickAPI.Database.Attributes;
 using QuickAPI.Database.DataModels;
-using QuickAPI.Helpers.Core;
+using QuickAPI.Helpers;
 using QuickAPI.Settings;
 
 namespace QuickAPI.Extensions;
@@ -39,6 +39,28 @@ public static class QuickApiExtensions
         if (helperDefinition is null)
         {
             services.AddSingleton(type);
+            return;
+        }
+
+        var interfaces = type.GetInterfaces();
+        var serviceType = interfaces.FirstOrDefault(m => m.IsAssignableTo(typeof(IHelper)) && m != typeof(IHelper));
+        
+        if (serviceType is not null)
+        {
+            switch (helperDefinition.DependencyInjectionType)
+            {
+                case DependencyInjectionType.Singleton:
+                    services.AddSingleton(serviceType, type);
+                    break;
+                case DependencyInjectionType.Scoped:
+                    services.AddScoped(serviceType, type);
+                    break;
+                case DependencyInjectionType.Transient:
+                    services.AddTransient(serviceType, type);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type));
+            }
             return;
         }
 
@@ -91,16 +113,13 @@ public static class QuickApiExtensions
     public static void AddQuickApi(this IServiceCollection services, bool automaticEndpointCreation = true,
         params Type[] types)
     {
-        services.MapHelpers(typeof(BaseModel), typeof(IHelper));
-        services.MapHelpers(types);
-
         services.MapConfigurationSettings(typeof(BaseModel), typeof(ISettings));
         services.MapConfigurationSettings(types);
 
+        services.MapHelpers(typeof(BaseModel), typeof(IHelper));
+        services.MapHelpers(types);
+
         var endpointDefinitions = new List<IDefinition>();
-
-        
-
 
         var externalDefinitionTypes = types
             .Select(m => m.Assembly)
@@ -148,7 +167,7 @@ public static class QuickApiExtensions
             externalEndpoint.DefineServices(services);
             endpointDefinitions.Add(externalEndpoint);
         }
-        
+
         if (automaticEndpointCreation)
         {
             var baseModelTypes = types
@@ -219,7 +238,8 @@ public static class QuickApiExtensions
         //     : baseEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
 
         var provider = services.BuildServiceProvider();
-        if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition endpointDefinition)
+        if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition
+            endpointDefinition)
         {
             return;
         }

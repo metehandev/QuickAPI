@@ -1,5 +1,3 @@
-using System;
-
 namespace QuickAPI.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]

@@ -20,10 +20,12 @@ public abstract class BaseModel
     [SqlDefaultValue("getdate()")]
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    [StringLength(100)]
     public string CreatedBy { get; set; } = string.Empty;
     
     public DateTimeOffset? ModifiedAt { get; set; }
     
+    [StringLength(100)]
     public string? ModifiedBy { get; set; }
 
     [SqlDefaultValue("(0)")]

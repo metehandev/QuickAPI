@@ -2,7 +2,7 @@
 
 namespace QuickAPI.Core;
 
-internal class AuthorizationOptions : IAuthorizeData
+public class AuthorizationOptions : IAuthorizeData
 {
     public string? Policy { get; set; }
     public string? Roles { get; set; }

@@ -17,9 +17,13 @@ public class SwaggerDefinition : IDefinition
     public void DefineServices(IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(m =>
+        services.AddSwaggerGen(options =>
         {
-            m.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "QuickAPI", Version = "v1" });
+
+            options.DocumentFilter<AddDataSourceLoadOptionsParametersFilter>();
+            // options.SchemaFilter<AutoBindableSchemaFilter>();
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
             {
                 Description = "JWT Authorization header using the bearer scheme",
                 Name = "Authorization",
@@ -28,7 +32,7 @@ public class SwaggerDefinition : IDefinition
                 Scheme = "Bearer"
             });
                 
-            m.AddSecurityRequirement(new OpenApiSecurityRequirement()
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement()
             {
                 {
                     new OpenApiSecurityScheme()

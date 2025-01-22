@@ -1,8 +1,3 @@
-using System;
-
 namespace QuickAPI.Settings;
 
-public interface ISettings
-{
-
-}
+public interface ISettings;

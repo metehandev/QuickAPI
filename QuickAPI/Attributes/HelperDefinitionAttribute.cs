@@ -1,4 +1,3 @@
-using System;
 using QuickAPI.Core;
 
 namespace QuickAPI.Attributes;
