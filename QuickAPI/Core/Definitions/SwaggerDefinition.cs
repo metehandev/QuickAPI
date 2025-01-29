@@ -21,7 +21,7 @@ public class SwaggerDefinition : IDefinition
         {
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "QuickAPI", Version = "v1" });
 
-            options.DocumentFilter<AddDataSourceLoadOptionsParametersFilter>();
+            options.DocumentFilter<DataSourceLoadOptionsParametersFilter>();
             // options.SchemaFilter<AutoBindableSchemaFilter>();
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
             {

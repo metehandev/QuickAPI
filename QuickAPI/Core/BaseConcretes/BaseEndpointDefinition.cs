@@ -83,8 +83,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var get = app.MapGet($"/api/{typeName}", GetAsync)
                 .Produces<T>()
-                .WithTags(groupName, nameof(CrudOperation.Get))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.Get)} {typeName}")
                 .WithName($"Get{typeName}");
             getRouteHandlers.Add(get);
         }
@@ -93,8 +94,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var getMany = app.MapGet($"/api/{groupName}", GetManyAsync)
                 .Produces<LoadResult>()
-                .WithTags(groupName, nameof(CrudOperation.GetMany))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.GetMany)} {typeName}")
                 .WithName($"Get{groupName}");
             getRouteHandlers.Add(getMany);
         }
@@ -103,8 +105,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var post = app.MapPost($"/api/{typeName}", AddAsync)
                 .Produces<T>(302)
-                .WithTags(groupName, nameof(CrudOperation.Post))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.Post)} {typeName}")
                 .WithName($"Post{typeName}");
             postRouteHandlers.Add(post);
         }
@@ -113,8 +116,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var put = app.MapPut($"/api/{typeName}", UpdateAsync)
                 .Produces<T>(302)
-                .WithTags(groupName, nameof(CrudOperation.Put))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.Put)} {typeName}")
                 .WithName($"Put{typeName}");
             putRouteHandlers.Add(put);
         }
@@ -123,8 +127,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var delete = app.MapDelete($"/api/{typeName}", RemoveAsync)
                 .Produces(200)
-                .WithTags(groupName, nameof(CrudOperation.Delete))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.Delete)} {typeName}")
                 .WithName($"Delete{typeName}");
             deleteRouteHandlers.Add(delete);
         }
@@ -133,8 +138,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var postMany = app.MapPost($"/api/{groupName}", AddManyAsync)
                 .Produces<IEnumerable<T>>()
-                .WithTags(groupName, nameof(CrudOperation.PostMany))
+                .WithTags(groupName)
                 .WithMetadata(type)
+                .WithDescription($"{nameof(CrudOperation.PostMany)} {typeName}")
                 .WithName($"Post{groupName}");
             postRouteHandlers.Add(postMany);
         }

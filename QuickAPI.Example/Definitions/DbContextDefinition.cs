@@ -7,7 +7,7 @@ using QuickAPI.Example.Data;
 namespace QuickAPI.Example.Definitions;
 
 [DefinitionOrder(0)]
-public class ExampleDbContextDefinition : IDefinition
+public class DbContextDefinition : IDefinition
 {
     public void Define(WebApplication app)
     {

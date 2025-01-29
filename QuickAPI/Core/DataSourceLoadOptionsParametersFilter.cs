@@ -1,11 +1,10 @@
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using QuickAPI.Database.Core;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace QuickAPI.Core;
 
-public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
+public class DataSourceLoadOptionsParametersFilter : IDocumentFilter
 {
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
@@ -22,7 +21,7 @@ public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
 
                 // For example, if your endpoint is named "GetMany" or route is "/api/items", 
                 // you can check for that:
-                if (operation.Tags.All(m => m.Name != nameof(CrudOperation.GetMany)))
+                if (!operation.Description?.Contains(nameof(CrudOperation.GetMany)) ?? false)
                     continue;
 
                 CreateDataSourceLoadOptionsParameters(operation);
@@ -129,8 +128,8 @@ public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema>
                     {
-                        ["selector"] = new OpenApiSchema { Type = "string" },
-                        ["desc"] = new OpenApiSchema { Type = "boolean" }
+                        ["selector"] = new() { Type = "string" },
+                        ["desc"] = new() { Type = "boolean" }
                     }
                 }
             }
@@ -152,10 +151,10 @@ public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema>
                     {
-                        ["selector"] = new OpenApiSchema { Type = "string" },
-                        ["desc"] = new OpenApiSchema { Type = "boolean" },
-                        ["groupInterval"] = new OpenApiSchema { Type = "string" },
-                        ["isExpanded"] = new OpenApiSchema { Type = "boolean" }
+                        ["selector"] = new() { Type = "string" },
+                        ["desc"] = new() { Type = "boolean" },
+                        ["groupInterval"] = new() { Type = "string" },
+                        ["isExpanded"] = new() { Type = "boolean" }
                     }
                 }
             }
@@ -192,8 +191,8 @@ public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema>
                     {
-                        ["selector"] = new OpenApiSchema { Type = "string" },
-                        ["summaryType"] = new OpenApiSchema { Type = "string" }
+                        ["selector"] = new() { Type = "string" },
+                        ["summaryType"] = new() { Type = "string" }
                     }
                 }
             }
@@ -215,8 +214,8 @@ public class AddDataSourceLoadOptionsParametersFilter : IDocumentFilter
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema>
                     {
-                        ["selector"] = new OpenApiSchema { Type = "string" },
-                        ["summaryType"] = new OpenApiSchema { Type = "string" }
+                        ["selector"] = new() { Type = "string" },
+                        ["summaryType"] = new() { Type = "string" }
                     }
                 }
             }
