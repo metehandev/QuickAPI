@@ -18,8 +18,8 @@ namespace QuickAPI.Core.BaseConcretes;
 public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefinition
     where T : BaseModel
 {
-    private readonly BaseContext _context;
-    private readonly ILogger<BaseEndpointDefinition<T>> _logger;
+    protected readonly BaseContext Context;
+    protected readonly ILogger<BaseEndpointDefinition<T>> Logger;
 
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGet;
 
@@ -65,8 +65,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         BaseContext context,
         ILogger<BaseEndpointDefinition<T>> logger)
     {
-        _context = context;
-        _logger = logger;
+        Context = context;
+        Logger = logger;
     }
 
     public override void Define(WebApplication app)
@@ -157,8 +157,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         [FromBody] IEnumerable<T> items)
     {
         var list = items.ToList();
-        await _context.Set<T>().AddRangeAsync(list);
-        await _context.BulkSaveChangesAsync();
+        await Context.Set<T>().AddRangeAsync(list);
+        await Context.BulkSaveChangesAsync();
         return Ok(list);
     }
 
@@ -179,8 +179,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
-            _logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
-            var item = await _context.Set<T>().FindAsync(id);
+            Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
+            var item = await Context.Set<T>().FindAsync(id);
             if (item is null)
             {
                 return NotFound();
@@ -197,7 +197,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on GetAsync");
+            Logger.LogError(ex, "Error on GetAsync");
             return BadRequest(ex.Message);
         }
     }
@@ -215,8 +215,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             OnBeforeGetManyAsync?.Invoke(claimsPrincipal, options);
 
-            _logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
-            var items = _context.Set<T>().AsQueryable();
+            Logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
+            var items = Context.Set<T>().AsQueryable();
             var result = await DataSourceLoader.LoadAsync(items, options);
 
             if (OnAfterGetMany is not null)
@@ -230,7 +230,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on GetManyAsync");
+            Logger.LogError(ex, "Error on GetManyAsync");
             return BadRequest(ex.Message);
         }
     }
@@ -251,10 +251,10 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             OnBeforePostAsync?.Invoke(claimsPrincipal, item);
 
-            _logger.LogInformation("Adding new {TypeName}", typeName);
+            Logger.LogInformation("Adding new {TypeName}", typeName);
 
-            await _context.Set<T>().AddAsync(item);
-            await _context.SaveChangesAsync();
+            await Context.Set<T>().AddAsync(item);
+            await Context.SaveChangesAsync();
 
             if (OnAfterPost is not null)
             {
@@ -267,7 +267,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on AddAsync");
+            Logger.LogError(ex, "Error on AddAsync");
             return BadRequest(ex.Message);
         }
     }
@@ -287,17 +287,17 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             var type = typeof(T);
             var typeName = type.Name;
-            _logger.LogInformation("Updating {TypeName}", typeName);
+            Logger.LogInformation("Updating {TypeName}", typeName);
 
-            var result = await _context.Set<T>().FindAsync(item.Id);
+            var result = await Context.Set<T>().FindAsync(item.Id);
 
             if (result is null)
             {
                 return NotFound();
             }
 
-            _context.Entry(result).CurrentValues.SetValues(item);
-            await _context.SaveChangesAsync();
+            Context.Entry(result).CurrentValues.SetValues(item);
+            await Context.SaveChangesAsync();
 
             if (OnAfterPut is not null)
             {
@@ -310,7 +310,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on UpdateAsync");
+            Logger.LogError(ex, "Error on UpdateAsync");
             return BadRequest(ex.Message);
         }
     }
@@ -330,14 +330,14 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             OnBeforeDeleteAsync?.Invoke(claimsPrincipal, id);
 
             logger.LogInformation("Deleting {TypeName} for id {Id}", typeof(T).Name, id);
-            var result = await _context.Set<T>().FindAsync(id);
+            var result = await Context.Set<T>().FindAsync(id);
             if (result is null)
             {
                 return NotFound();
             }
 
-            _context.Set<T>().Remove(result);
-            await _context.SaveChangesAsync();
+            Context.Set<T>().Remove(result);
+            await Context.SaveChangesAsync();
 
             OnAfterDeleteAsync?.Invoke();
             if (OnAfterDelete is not null)
