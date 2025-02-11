@@ -21,7 +21,7 @@ public class DataSourceLoadOptionsParametersFilter : IDocumentFilter
 
                 // For example, if your endpoint is named "GetMany" or route is "/api/items", 
                 // you can check for that:
-                if (!operation.Description?.Contains(nameof(CrudOperation.GetMany)) ?? false)
+                if (!(operation.Description?.Contains(nameof(CrudOperation.GetMany)) ?? false))
                     continue;
 
                 CreateDataSourceLoadOptionsParameters(operation);

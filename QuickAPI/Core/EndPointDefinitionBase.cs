@@ -15,7 +15,7 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
     public virtual Dictionary<HttpMethod, string> MethodRoles { get; set; } = new();
     public virtual Dictionary<HttpMethod, bool> MethodAllowAnonymouses { get; set; } = new();
 
-    public bool IsAllowAnonymous(HttpMethod method)
+    private bool IsAllowAnonymous(HttpMethod method)
     {
         return MethodAllowAnonymouses.TryGetValue(method, out var allowAnonymous) && allowAnonymous;
     }
@@ -49,8 +49,7 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
 
     protected void BindAuthorizationOptionsForVerb(HttpMethod method, params RouteHandlerBuilder[] handlerBuilders)
     {
-        if (!RequireAuthorization ||
-            (MethodAllowAnonymouses.TryGetValue(method, out var allowAnonymous) && allowAnonymous))
+        if (!RequireAuthorization || IsAllowAnonymous(method))
         {
             foreach (var handlerBuilder in handlerBuilders)
             {
