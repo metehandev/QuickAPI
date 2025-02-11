@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using QuickAPI.Database.Services.Core;
 
@@ -20,7 +21,7 @@ public class TenantProvider : ITenantProvider
 
     public string? GetCurrentUser()
     {
-        var user = _httpContextAccessor.HttpContext?.User.FindFirst("UserName")?.Value;
+        var user = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value;
         return user;
     }
 } 

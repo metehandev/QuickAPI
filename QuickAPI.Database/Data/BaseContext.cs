@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -22,15 +23,63 @@ public class BaseContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyCustomDataAnnotations();
+        ApplyTenantQueryFilters(modelBuilder);
     }
 
-    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
-        CancellationToken cancellationToken = new CancellationToken())
+    private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
+    {
+        var tenantId = _tenantProvider.GetCurrentTenantId();
+        if (!tenantId.HasValue || tenantId == Guid.Empty)
+        {
+            return;
+        }
+
+        // var departmentId = _departmentProvider.GetDepartmentId()
+        foreach (var tenantModel in modelBuilder.Model.GetEntityTypes().Select(m => m.ClrType)
+                     .Where(m => m.IsAssignableTo(typeof(ITenantModel))))
+        {
+            var expression = CreateTenantIdFilterExpression(tenantModel, tenantId.Value);
+            modelBuilder.Entity(tenantModel, builder => { builder.HasQueryFilter(expression); });
+        }
+    }
+
+    private LambdaExpression CreateTenantIdFilterExpression(Type tenantModelType, Guid tenantId)
+    {
+        //m => m.TenantId == _tenantId || m.TenantId == Guid.Empty
+        var parameter = Expression.Parameter(tenantModelType, "m");
+        var tenantIdProperty = Expression.Property(parameter, nameof(ITenantModel.TenantId));
+
+        // var tenantId = _tenantProvider.GetCurrentTenantId();
+        var tenantIdConstant = Expression.Constant(tenantId);
+        var zeroConstant = Expression.Constant(Guid.Empty);
+
+        var equalToTenantId = Expression.Equal(tenantIdProperty, tenantIdConstant);
+        var equalToZero = Expression.Equal(tenantIdProperty, zeroConstant);
+
+        var orExpression = Expression.OrElse(equalToTenantId, equalToZero);
+
+        var lambdaExpression = Expression.Lambda(orExpression, parameter);
+        return lambdaExpression;
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
+    {
+        SetCreatedAndModifiedValues();
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        SetCreatedAndModifiedValues();
+        return base.SaveChanges();
+    }
+
+    private void SetCreatedAndModifiedValues()
     {
         var addedEntries = ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added)
             .ToList();
-        
+
         var modifiedEntries = ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Modified)
             .ToList();
@@ -39,9 +88,6 @@ public class BaseContext : DbContext
 
         foreach (var entry in addedEntries)
         {
-            // Set default values for new entities
-            SetDefaultValues(entry);
-
             // Set CreatedAt for BaseModel entities
             SetCreatedValues(entry, currentUser);
         }
@@ -51,19 +97,16 @@ public class BaseContext : DbContext
             // Set ModifiedAt for BaseModel entities
             SetModifiedValues(entry, currentUser);
         }
-        
+
         // Set TenantId for ITenantEntity entities
         var tenantId = _tenantProvider.GetCurrentTenantId();
         if (!tenantId.HasValue)
-            return await base.SaveChangesAsync(cancellationToken);
-
+            return;
         var tenantEntries = addedEntries.Where(e => e.Entity is ITenantModel);
         foreach (var entry in tenantEntries)
         {
             ((ITenantModel)entry.Entity).TenantId = tenantId.Value;
         }
-
-        return await base.SaveChangesAsync(cancellationToken);
     }
 
     private static void SetModifiedValues(EntityEntry entry, string? currentUser)
@@ -80,17 +123,5 @@ public class BaseContext : DbContext
             return;
         baseModel.CreatedAt = DateTimeOffset.UtcNow;
         baseModel.CreatedBy = currentUser ?? string.Empty;
-    }
-
-    private static void SetDefaultValues(EntityEntry entry)
-    {
-        foreach (var property in entry.Entity.GetType().GetProperties())
-        {
-            var defaultValueAttr = property.GetCustomAttribute<SqlDefaultValueAttribute>();
-            if (defaultValueAttr != null && property.GetValue(entry.Entity) == null)
-            {
-                property.SetValue(entry.Entity, defaultValueAttr.Value);
-            }
-        }
     }
 }
