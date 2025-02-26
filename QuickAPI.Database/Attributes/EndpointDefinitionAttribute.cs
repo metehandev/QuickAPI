@@ -37,4 +37,11 @@ public class EndpointDefinitionAttribute : Attribute
     /// Select which Crud Operations should be created for this Endpoint. Default is All.  
     /// </summary>
     public CrudOperation CrudOperation { get; set; } = CrudOperation.All;
+    
+    /// <summary>
+    /// Optional DTO type to use for input/output models instead of the entity type.
+    /// If set, the system will use BaseDtoEndpointDefinition&lt;T, TDto&gt; for CRUD operations.
+    /// The DTO type must inherit from BaseDto and have compatible property names.
+    /// </summary>
+    public Type? DtoType { get; set; } = null;
 }

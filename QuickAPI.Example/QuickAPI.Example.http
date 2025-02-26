@@ -1,6 +1,62 @@
 @QuickAPI.Example_HostAddress = http://localhost:5020
+@authToken = {{login.response.body.token}}
 
-GET {{QuickAPI.Example_HostAddress}}/weatherforecast/
-Accept: application/json
+### Step 1: User Login
+# @name login
+POST {{QuickAPI.Example_HostAddress}}/api/Authentication
+Content-Type: application/json
 
-###
+{
+  "userName": "Admin User",
+  "password": "admin123"
+}
+
+### Step 2: List all categories
+GET {{QuickAPI.Example_HostAddress}}/api/Categories
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Step 3: List products for the Electronics category (categoryId: 44444444-4444-4444-4444-444444444444)
+GET {{QuickAPI.Example_HostAddress}}/api/Products?filter=["CategoryId","=","44444444-4444-4444-4444-444444444444"]
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Step 4: Create a new product in the Electronics category
+# @name newProduct1
+POST {{QuickAPI.Example_HostAddress}}/api/Product
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "code": "Smart Speaker",
+  "info": "Voice-controlled smart speaker with AI assistant",
+  "categoryId": "44444444-4444-4444-4444-444444444444"
+}
+
+### Step 5: List all products across all categories
+GET {{QuickAPI.Example_HostAddress}}/api/Products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Step 6: Create another product in the Books category
+POST {{QuickAPI.Example_HostAddress}}/api/Product
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "code": "Design Patterns",
+  "info": "Book about software design patterns",
+  "categoryId": "55555555-5555-5555-5555-555555555555"
+}
+
+### Step 7: Delete the first product we created
+DELETE {{QuickAPI.Example_HostAddress}}/api/Product?id={{newProduct1.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Step 8: List all products to verify deletion
+GET {{QuickAPI.Example_HostAddress}}/api/Products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}

@@ -232,10 +232,22 @@ public static class QuickApiExtensions
             return;
         }
 
-        var endpointDefinitionType = baseEndpointDefinitionType.MakeGenericType(endpointBaseModel);
-        // var endpointDefinitionType = endpointDefinitionAttribute.DtoType is null
-        //     ? baseEndpointDefinitionType.MakeGenericType(endpointBaseModel)
-        //     : baseEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
+        // Determine which endpoint definition type to use based on DtoType property
+        Type endpointDefinitionType;
+        if (endpointDefinitionAttribute.DtoType is null)
+        {
+            // Use regular BaseEndpointDefinition<T> if no DTO type is specified
+            endpointDefinitionType = baseEndpointDefinitionType.MakeGenericType(endpointBaseModel);
+        }
+        else
+        {
+            // Use BaseDtoEndpointDefinition<T, TDto> if DTO type is specified
+            Type baseDtoEndpointDefinitionType = typeof(BaseDtoEndpointDefinition<,>);
+            endpointDefinitionType = baseDtoEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
+            
+            // Register the mapper for this model/DTO pair if it doesn't exist
+            RegisterMapperIfNeeded(services, endpointBaseModel, endpointDefinitionAttribute.DtoType);
+        }
 
         var provider = services.BuildServiceProvider();
         if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition
@@ -265,6 +277,28 @@ public static class QuickApiExtensions
         endpointDefinition.RequireAuthorization = endpointDefinitionAttribute.RequireAuthorization;
         endpointDefinition.DefineServices(services);
         endpointDefinitions.Add(endpointDefinition);
+    }
+    
+    private static void RegisterMapperIfNeeded(IServiceCollection services, Type modelType, Type dtoType)
+    {
+        // Check if a custom mapper is already registered for this model/DTO pair
+        var mapperInterfaceType = typeof(IModelDtoMapper<,>).MakeGenericType(modelType, dtoType);
+        
+        // Look for any custom mapper implementations in the services collection
+        var provider = services.BuildServiceProvider();
+        var existingMapper = provider.GetService(mapperInterfaceType);
+        
+        if (existingMapper == null)
+        {
+            // No custom mapper found, so register an open type for the SimpleModelDtoMapper
+            services.AddTransient(mapperInterfaceType, sp =>
+            {
+                // When a mapper is requested, the user will need to provide a concrete implementation
+                throw new InvalidOperationException(
+                    $"No mapper found for model type {modelType.Name} and DTO type {dtoType.Name}. " +
+                    $"Please register a concrete implementation of IModelDtoMapper<{modelType.Name}, {dtoType.Name}>.");
+            });
+        }
     }
 
     public static void UseQuickApi(this WebApplication app)
