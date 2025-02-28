@@ -232,6 +232,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             var items = Context.Set<TModel>().AsQueryable();
             var result = await DataSourceLoader.LoadAsync(items, options);
 
+            result.data = Mapper.MapToDtos(result.data.Cast<TModel>()).ToList();
+            
             if (OnAfterGetMany is not null)
             {
                 await OnAfterGetMany.Invoke(result);

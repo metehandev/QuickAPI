@@ -12,6 +12,9 @@ using QuickAPI.Settings;
 
 namespace QuickAPI.Extensions;
 
+/// <summary>
+/// Entry point for QuickAPI extensions
+/// </summary>
 public static class QuickApiExtensions
 {
     private static void MapConfigurationSettings(this IServiceCollection services, params Type[] externalTypes)
@@ -44,7 +47,7 @@ public static class QuickApiExtensions
 
         var interfaces = type.GetInterfaces();
         var serviceType = interfaces.FirstOrDefault(m => m.IsAssignableTo(typeof(IHelper)) && m != typeof(IHelper));
-        
+
         if (serviceType is not null)
         {
             switch (helperDefinition.DependencyInjectionType)
@@ -61,6 +64,7 @@ public static class QuickApiExtensions
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
+
             return;
         }
 
@@ -110,7 +114,12 @@ public static class QuickApiExtensions
         method.Invoke(null, [services, configSection]);
     }
 
-    public static void AddQuickApi(this IServiceCollection services, bool automaticEndpointCreation = true,
+    /// <summary>
+    /// Register QuickApi layers on DI
+    /// </summary>
+    /// <param name="services">Services collection to inject DI items into</param>
+    /// <param name="types">Type markers for detecting the QuickApi attribute models in an Assembly</param>
+    public static void AddQuickApi(this IServiceCollection services,
         params Type[] types)
     {
         services.MapConfigurationSettings(typeof(BaseModel), typeof(ISettings));
@@ -167,18 +176,23 @@ public static class QuickApiExtensions
             externalEndpoint.DefineServices(services);
             endpointDefinitions.Add(externalEndpoint);
         }
+        
+        var baseModelTypes = types
+            .SelectMany(m => m.Assembly.ExportedTypes)
+            .Where(m => m.IsAssignableTo(typeof(BaseModel))
+                        && m is { IsInterface: false, IsAbstract: false }
+                        && m.GetCustomAttribute<EndpointDefinitionAttribute>() != null);
 
-        if (automaticEndpointCreation)
+        baseModelTypes.Execute(endpointBaseModel =>
         {
-            var baseModelTypes = types
-                .SelectMany(m => m.Assembly.ExportedTypes)
-                .Where(m => m.IsAssignableTo(typeof(BaseModel))
-                            && m is { IsInterface: false, IsAbstract: false }
-                            && m.GetCustomAttribute<EndpointDefinitionAttribute>() != null);
+            var endpointDefinition = services.RegisterBaseEndpointDefinition(endpointBaseModel);
+            if (endpointDefinition is null)
+            {
+                return;
+            }
 
-            baseModelTypes.Execute(endpointBaseModel => services.RegisterBaseEndpointDefinition(
-                typeof(BaseEndpointDefinition<>), endpointBaseModel, endpointDefinitions));
-        }
+            endpointDefinitions.Add(endpointDefinition);
+        });
 
         var externalEndpointTypes = types
             .Select(m => m.Assembly)
@@ -223,13 +237,13 @@ public static class QuickApiExtensions
         services.AddSingleton<IReadOnlyCollection<IDefinition>>(endpointDefinitions);
     }
 
-    private static void RegisterBaseEndpointDefinition(this IServiceCollection services,
-        Type baseEndpointDefinitionType, Type endpointBaseModel, List<IDefinition> endpointDefinitions)
+    private static IDefinition? RegisterBaseEndpointDefinition(this IServiceCollection services,
+        Type endpointBaseModel)
     {
         var endpointDefinitionAttribute = endpointBaseModel.GetCustomAttribute<EndpointDefinitionAttribute>()!;
         if (!endpointDefinitionAttribute.AutomaticEndpointCreation)
         {
-            return;
+            return null;
         }
 
         // Determine which endpoint definition type to use based on DtoType property
@@ -237,14 +251,16 @@ public static class QuickApiExtensions
         if (endpointDefinitionAttribute.DtoType is null)
         {
             // Use regular BaseEndpointDefinition<T> if no DTO type is specified
+            var baseEndpointDefinitionType = typeof(BaseEndpointDefinition<>);
             endpointDefinitionType = baseEndpointDefinitionType.MakeGenericType(endpointBaseModel);
         }
         else
         {
             // Use BaseDtoEndpointDefinition<T, TDto> if DTO type is specified
-            Type baseDtoEndpointDefinitionType = typeof(BaseDtoEndpointDefinition<,>);
-            endpointDefinitionType = baseDtoEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
-            
+            var baseDtoEndpointDefinitionType = typeof(BaseDtoEndpointDefinition<,>);
+            endpointDefinitionType =
+                baseDtoEndpointDefinitionType.MakeGenericType(endpointBaseModel, endpointDefinitionAttribute.DtoType);
+
             // Register the mapper for this model/DTO pair if it doesn't exist
             RegisterMapperIfNeeded(services, endpointBaseModel, endpointDefinitionAttribute.DtoType);
         }
@@ -253,7 +269,7 @@ public static class QuickApiExtensions
         if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition
             endpointDefinition)
         {
-            return;
+            return null;
         }
 
         endpointDefinition.CrudOperation = endpointDefinitionAttribute.CrudOperation;
@@ -276,31 +292,31 @@ public static class QuickApiExtensions
 
         endpointDefinition.RequireAuthorization = endpointDefinitionAttribute.RequireAuthorization;
         endpointDefinition.DefineServices(services);
-        endpointDefinitions.Add(endpointDefinition);
+        return endpointDefinition;
     }
-    
+
     private static void RegisterMapperIfNeeded(IServiceCollection services, Type modelType, Type dtoType)
     {
         // Check if a custom mapper is already registered for this model/DTO pair
         var mapperInterfaceType = typeof(IModelDtoMapper<,>).MakeGenericType(modelType, dtoType);
-        
+
         // Look for any custom mapper implementations in the services collection
         var provider = services.BuildServiceProvider();
         var existingMapper = provider.GetService(mapperInterfaceType);
-        
+
         if (existingMapper == null)
         {
             // No custom mapper found, so register an open type for the SimpleModelDtoMapper
-            services.AddTransient(mapperInterfaceType, sp =>
-            {
-                // When a mapper is requested, the user will need to provide a concrete implementation
-                throw new InvalidOperationException(
-                    $"No mapper found for model type {modelType.Name} and DTO type {dtoType.Name}. " +
-                    $"Please register a concrete implementation of IModelDtoMapper<{modelType.Name}, {dtoType.Name}>.");
-            });
+            services.AddTransient(mapperInterfaceType, _ => throw new InvalidOperationException(
+                $"No mapper found for model type {modelType.Name} and DTO type {dtoType.Name}. " +
+                $"Please register a concrete implementation of IModelDtoMapper<{modelType.Name}, {dtoType.Name}>."));
         }
     }
 
+    /// <summary>
+    /// QuickApi use on built application
+    /// </summary>
+    /// <param name="app"></param>
     public static void UseQuickApi(this WebApplication app)
     {
         var definitions = app.Services.GetRequiredService<IReadOnlyCollection<IDefinition>>();

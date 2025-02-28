@@ -3,20 +3,36 @@ using System.Text.Json.Serialization;
 
 namespace QuickAPI.Shared.Dtos;
 
+/// <summary>
+/// 
+/// </summary>
 public abstract record BaseDto
 {
+    /// <summary>
+    /// Id property
+    /// </summary>
     [JsonPropertyName("id")]
     [JsonPropertyOrder(10)]
-    public Guid Id { get; set; }
+    public Guid Id { get; init; }
 
-    [JsonPropertyName("code")]
+    /// <summary>
+    /// Name property
+    /// </summary>
+    [JsonPropertyName("name")]
     [JsonPropertyOrder(20)]
-    public string Code { get; set; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("info")]
+    /// <summary>
+    /// Description property
+    /// </summary>
+    [JsonPropertyName("description")]
     [JsonPropertyOrder(30)]
-    public string Info { get; set; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Default ToString of the Dto is the Json representation of the Dto
+    /// </summary>
+    /// <returns></returns>
     public override string ToString()
     {
         return JsonSerializer.Serialize(this);

@@ -4,6 +4,22 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        
+        <!-- Nuget Package Info -->
+        <PackageId>QuickAPI.Extensions</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Metehan Gultekin</Authors>
+        <Company>Metehan Gultekin</Company>
+        <Product>QuickAPI.Extensions</Product>
+        <Description>Common extension methods for use with QuickAPI</Description>
+        <Copyright>Copyright © 2025</Copyright>
+        <PackageTags>api;extensions;quickapi</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/metehandev/QuickAPI</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/metehandev/QuickAPI</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
 </Project>

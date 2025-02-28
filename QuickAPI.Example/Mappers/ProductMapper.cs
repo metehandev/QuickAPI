@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using QuickAPI.Core;
 using QuickAPI.Database.Data;
 using QuickAPI.Example.DataModels;
@@ -26,8 +24,8 @@ public class ProductMapper : IModelDtoMapper<Product, ProductDto>
         var dto = new ProductDto
         {
             Id = model.Id,
-            Code = model.Name,
-            Info = model.Description ?? string.Empty,
+            Name = model.Name,
+            Description = model.Description ?? string.Empty,
             CategoryId = model.CategoryId,
             CategoryName = model.Category?.Name
         };
@@ -40,8 +38,8 @@ public class ProductMapper : IModelDtoMapper<Product, ProductDto>
         model ??= new Product();
 
         model.Id = dto.Id;
-        model.Name = dto.Code; // Using Code field for Name
-        model.Description = dto.Info; // Using Info field for Description
+        model.Name = dto.Name; // Using Name field for Name
+        model.Description = dto.Description; // Using Description field for Description
         model.CategoryId = dto.CategoryId;
 
         return model;

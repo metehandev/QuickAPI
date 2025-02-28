@@ -1,8 +1,4 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using QuickAPI.Core;
-using QuickAPI.Core.BaseConcretes;
-using QuickAPI.Database.Data;
 using QuickAPI.Example.DataModels;
 using QuickAPI.Example.Dtos;
 
@@ -13,22 +9,13 @@ namespace QuickAPI.Example.Mappers;
 /// </summary>
 public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
 {
-    private readonly ILogger<CategoryMapper> _logger;
-    private readonly BaseContext _context;
-
-    public CategoryMapper(ILogger<CategoryMapper> logger, BaseContext context)
-    {
-        _logger = logger;
-        _context = context;
-    }
-
     public CategoryDto MapToDto(Category model)
     {
         var dto = new CategoryDto
         {
             Id = model.Id,
-            Code = model.Name,
-            Info = model.Description ?? string.Empty
+            Name = model.Name,
+            Description = model.Description ?? string.Empty
         };
 
         // You could calculate product count here if needed
@@ -42,8 +29,8 @@ public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
         model ??= new Category();
 
         model.Id = dto.Id;
-        model.Name = dto.Code; // Using Code field for Name
-        model.Description = dto.Info; // Using Info field for Description
+        model.Name = dto.Name; // Using Name field for Name
+        model.Description = dto.Description; // Using Description field for Description
 
         return model;
     }

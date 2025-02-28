@@ -10,11 +10,14 @@ using Microsoft.Extensions.Logging;
 using QuickAPI.Database.Core;
 using QuickAPI.Database.Data;
 using QuickAPI.Database.DataModels;
-using Swashbuckle.AspNetCore.Annotations;
 using static Microsoft.AspNetCore.Http.Results;
 
 namespace QuickAPI.Core.BaseConcretes;
 
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefinition
     where T : BaseModel
 {
