@@ -7,9 +7,9 @@ using QuickAPI.Database.Attributes;
 
 namespace QuickAPI.Database.Extensions;
 
-public static class DbContextExtensions
+internal static class DbContextExtensions
 {
-    public static void ApplyCustomDataAnnotations(this ModelBuilder modelBuilder)
+    internal static void ApplyCustomDataAnnotations(this ModelBuilder modelBuilder)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -174,21 +174,21 @@ public static class DbContextExtensions
         indexBuilder.IncludeProperties(constraintIndexAttribute.IncludeProperties);
     }
 
-    private static void EntityLoop(this ModelBuilder builder, Action<IMutableEntityType> action)
-    {
-        foreach (var entityType in builder.Model.GetEntityTypes())
-        {
-            action(entityType);
-        }
-    }
+    // private static void EntityLoop(this ModelBuilder builder, Action<IMutableEntityType> action)
+    // {
+    //     foreach (var entityType in builder.Model.GetEntityTypes())
+    //     {
+    //         action(entityType);
+    //     }
+    // }
 
-    public static void RemoveOneToManyCascade(this ModelBuilder builder)
-    {
-        builder.EntityLoop(et => et.GetForeignKeys()
-            .Where(fk => fk is { IsOwnership: false, DeleteBehavior: DeleteBehavior.Cascade })
-            .ToList()
-            .ForEach(fk => fk.DeleteBehavior = DeleteBehavior.Restrict));
-    }
+    // public static void RemoveOneToManyCascade(this ModelBuilder builder)
+    // {
+    //     builder.EntityLoop(et => et.GetForeignKeys()
+    //         .Where(fk => fk is { IsOwnership: false, DeleteBehavior: DeleteBehavior.Cascade })
+    //         .ToList()
+    //         .ForEach(fk => fk.DeleteBehavior = DeleteBehavior.Restrict));
+    // }
 
     private static object GetDbSet(this DbContext context, Type type)
     {

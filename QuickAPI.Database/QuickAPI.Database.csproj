@@ -9,7 +9,7 @@
         <PackageId>QuickAPI.Database</PackageId>
         <Version>1.0.0</Version>
         <Authors>Metehan Gultekin</Authors>
-        <Company>Metehan Gultekin</Company>
+        <Company>Merkez Yazılım</Company>
         <Product>QuickAPI.Database</Product>
         <Description>Database components for QuickAPI including data models, attributes, and EF Core extensions</Description>
         <Copyright>Copyright © 2025</Copyright>

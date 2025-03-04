@@ -9,16 +9,29 @@ using QuickAPI.Database.Services.Core;
 
 namespace QuickAPI.Database.Data;
 
+/// <summary>
+/// Base DbContext model to use in QuickAPI layers.
+/// </summary>
 public class BaseContext : DbContext
 {
     private readonly ITenantProvider _tenantProvider;
 
+    /// <summary>
+    /// Injected TenantProvider
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="tenantProvider"></param>
     public BaseContext(DbContextOptions options,
         ITenantProvider tenantProvider) : base(options)
     {
         _tenantProvider = tenantProvider;
     }
 
+    /// <summary>
+    /// Apply Custom data annotation attributes
+    /// Apply TenantId query filters
+    /// </summary>
+    /// <param name="modelBuilder"></param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -62,12 +75,22 @@ public class BaseContext : DbContext
         return lambdaExpression;
     }
 
+    
+    /// <summary>
+    /// SaveChangesAsync override to set created and modified fields
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
     {
         SetCreatedAndModifiedValues();
         return await base.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// SaveChanges override to set created and modified fields
+    /// </summary>
+    /// <returns></returns>
     public override int SaveChanges()
     {
         SetCreatedAndModifiedValues();

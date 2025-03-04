@@ -6,7 +6,7 @@ using QuickAPI.Attributes;
 namespace QuickAPI.Core.Definitions;
 
 [DefinitionOrder(100)]
-public class SwaggerDefinition : IDefinition
+internal class SwaggerDefinition : IDefinition
 {
     public void Define(WebApplication app)
     {

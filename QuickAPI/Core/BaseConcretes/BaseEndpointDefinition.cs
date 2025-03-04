@@ -15,55 +15,132 @@ using static Microsoft.AspNetCore.Http.Results;
 namespace QuickAPI.Core.BaseConcretes;
 
 /// <summary>
-/// 
+/// Base endpoint definition class for endpoints that use Models itself for input/output
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefinition
     where T : BaseModel
 {
+    /// <summary>
+    /// Injected DbContext
+    /// </summary>
     protected readonly BaseContext Context;
+    
+    /// <summary>
+    /// Injected Logger
+    /// </summary>
     protected readonly ILogger<BaseEndpointDefinition<T>> Logger;
 
+    // Before event handlers
+    /// <summary>
+    /// Assign method to run sync events on before GET method
+    /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGet;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on before GET Many method
+    /// </summary>
     protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetMany;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on before POST method
+    /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePost;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on before PUT method
+    /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePut;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on before DELETE method
+    /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDelete;
 
+    // Async Before event handlers
+    /// <summary>
+    /// Assign method to run async events on before GET method
+    /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGetAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on before GET Many method
+    /// </summary>
     protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetManyAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on before POST method
+    /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePostAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on before PUT method
+    /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePutAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on before DELETE method
+    /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDeleteAsync;
 
+    // After event handlers
+    
+    /// <summary>
+    /// Assign method to run sync events on after GET method
+    /// </summary>
     protected Func<T, Task>? OnAfterGet;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on after GET Many method
+    /// </summary>
     protected Func<LoadResult, Task>? OnAfterGetMany;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on after POST method
+    /// </summary>
     protected Func<T, Task>? OnAfterPost;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on after PUT method
+    /// </summary>
     protected Func<T, Task>? OnAfterPut;
-
+    
+    /// <summary>
+    /// Assign method to run sync events on after DELETE method
+    /// </summary>
     protected Func<Task>? OnAfterDelete;
 
+    // Async After event handlers
+    /// <summary>
+    /// Assign method to run async events on after GET method
+    /// </summary>
     protected Func<T, Task>? OnAfterGetAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on after GET Many method
+    /// </summary>
     protected Func<LoadResult, Task>? OnAfterGetManyAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on after POST method
+    /// </summary>
     protected Func<T, Task>? OnAfterPostAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on after PUT method
+    /// </summary>
     protected Func<T, Task>? OnAfterPutAsync;
-
+    
+    /// <summary>
+    /// Assign method to run async events on after DELETE method
+    /// </summary>
     protected Func<Task>? OnAfterDeleteAsync;
 
+    /// <summary>
+    /// Base constructor to inject Context and Logger
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="logger"></param>
     public BaseEndpointDefinition(
         BaseContext context,
         ILogger<BaseEndpointDefinition<T>> logger)
@@ -71,7 +148,11 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         Context = context;
         Logger = logger;
     }
-
+    
+    /// <summary>
+    /// Define method to set REST Method mappings using minimal APIs 
+    /// </summary>
+    /// <param name="app"></param>
     public override void Define(WebApplication app)
     {
         var type = typeof(T);
@@ -154,7 +235,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         BindAuthorizationOptionsForVerb(HttpMethod.Delete, deleteRouteHandlers.ToArray());
     }
 
-
+    /// <summary>
+    /// Overridable base method for POST Many method
+    /// </summary>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="items"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> AddManyAsync(
         ClaimsPrincipal claimsPrincipal,
         [FromBody] IEnumerable<T> items)
@@ -165,10 +251,21 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         return Ok(list);
     }
 
+    
+    /// <summary>
+    /// Register any necessary methods to DI 
+    /// </summary>
+    /// <param name="services"></param>
     public override void DefineServices(IServiceCollection services)
     {
     }
 
+    /// <summary>
+    /// Overridable base method for GET method
+    /// </summary>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="id"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> GetAsync(
         ClaimsPrincipal claimsPrincipal,
         Guid id)
@@ -205,6 +302,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
     }
 
+    /// <summary>
+    /// Overridable base method for GET Many method
+    /// </summary>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> GetManyAsync(
         ClaimsPrincipal claimsPrincipal, 
         BindableDataSourceLoadOptions options)
@@ -238,6 +341,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
     }
 
+    /// <summary>
+    /// Overridable base method for POST method
+    /// </summary>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="item"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> AddAsync(
         ClaimsPrincipal claimsPrincipal,
         T item)
@@ -274,7 +383,13 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             return BadRequest(ex.Message);
         }
     }
-
+    
+    /// <summary>
+    /// Overridable base method for PUT method
+    /// </summary>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="item"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> UpdateAsync(
         ClaimsPrincipal claimsPrincipal,
         T item)
@@ -318,6 +433,13 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
     }
 
+    /// <summary>
+    /// Overridable base method for DELETE method
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="claimsPrincipal"></param>
+    /// <param name="id"></param>
+    /// <returns></returns>
     protected virtual async Task<IResult> RemoveAsync(
         ILogger<BaseEndpointDefinition<T>> logger,
         ClaimsPrincipal claimsPrincipal,

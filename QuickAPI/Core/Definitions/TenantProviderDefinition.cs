@@ -4,7 +4,7 @@ using QuickAPI.Database.Services.Core;
 
 namespace QuickAPI.Core.Definitions;
 
-public class TenantProviderDefinition : IDefinition
+internal class TenantProviderDefinition : IDefinition
 {
     public void Define(WebApplication app)
     {

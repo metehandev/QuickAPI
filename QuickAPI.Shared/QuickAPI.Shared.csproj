@@ -9,7 +9,7 @@
     <PackageId>QuickAPI.Shared</PackageId>
     <Version>1.0.0</Version>
     <Authors>Metehan Gultekin</Authors>
-    <Company>Metehan Gultekin</Company>
+    <Company>Merkez Yazılım</Company>
     <Product>QuickAPI.Shared</Product>
     <Description>Shared components for QuickAPI including DTOs and common utilities</Description>
     <Copyright>Copyright © 2025</Copyright>
@@ -21,9 +21,5 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\QuickAPI.Extensions\QuickAPI.Extensions.csproj" />
-  </ItemGroup>
 
 </Project>

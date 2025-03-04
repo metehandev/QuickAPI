@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace QuickAPI.Shared.Dtos;
 
 /// <summary>
-/// 
+/// Base record for Dto objects for QuickAPI's own Mapping and CRUD generation system. 
 /// </summary>
 public abstract record BaseDto
 {

@@ -5,7 +5,7 @@ using QuickAPI.Helpers;
 
 namespace QuickAPI.Core.Definitions;
 
-public class AuthServicesDefinition(
+internal class AuthServicesDefinition(
     ITokenValidationParametersHelper tokenValidationParametersHelper) : IDefinition
 {
     // private readonly TokenServiceSettings _settings = options.Value;

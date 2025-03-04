@@ -10,7 +10,7 @@
     <PackageId>QuickAPI</PackageId>
     <Version>1.0.0</Version>
     <Authors>Metehan Gultekin</Authors>
-    <Company>Metehan Gultekin</Company>
+    <Company>Merkez Yazılım</Company>
     <Product>QuickAPI</Product>
     <Description>A .NET library for building APIs quickly with CRUD endpoints, DTO support, and more</Description>
     <Copyright>Copyright © 2025</Copyright>

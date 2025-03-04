@@ -4,7 +4,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace QuickAPI.Core;
 
-public class DataSourceLoadOptionsParametersFilter : IDocumentFilter
+internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
 {
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {

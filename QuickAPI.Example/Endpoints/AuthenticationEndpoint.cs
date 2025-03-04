@@ -17,6 +17,8 @@ public class AuthenticationEndpoint : EndPointDefinitionBase, IEndpointDefinitio
     public AuthenticationEndpoint(BaseContext context)
     {
         _context = context;
+        RequireAuthorization = false;
+        CommonRole = nameof(UserRole.SuperAdmin);
     }
 
     public override void Define(WebApplication app)
@@ -77,7 +79,4 @@ public class AuthenticationEndpoint : EndPointDefinitionBase, IEndpointDefinitio
     {
         services.AddScoped<ITokenService, TokenService>();
     }
-
-    public override bool RequireAuthorization { get; set; } = false;
-    public override string CommonRole { get; set; } = nameof(UserRole.SuperAdmin);
 }

@@ -7,7 +7,6 @@ using QuickAPI.Database.Core;
 using QuickAPI.Database.Data;
 using QuickAPI.Example.DataModels;
 using QuickAPI.Example.Dtos;
-using QuickAPI.Example.Mappers;
 
 namespace QuickAPI.Example.Endpoints;
 
@@ -17,17 +16,7 @@ namespace QuickAPI.Example.Endpoints;
 /// </summary>
 public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
 {
-    // Configure CRUD operations
-    public override CrudOperation CrudOperation { get; set; } = CrudOperation.All;
 
-    // Configure authorization
-    public override bool RequireAuthorization { get; set; } = true;
-    public override string CommonRole { get; set; } = nameof(UserRole.Admin);
-
-    public override Dictionary<HttpMethod, bool> MethodAllowAnonymouses { get; set; } = new()
-    {
-        { HttpMethod.Get, true }
-    };
 
     public CategoryEndpoint(
         BaseContext context,
@@ -37,7 +26,10 @@ public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
         // Set up event hooks
         OnBeforeGetMany = BeforeGetMany;
         OnAfterGetMany = AfterGetMany;
-
+        CrudOperation = CrudOperation.All;
+        RequireAuthorization = true;
+        CommonRole = nameof(UserRole.Admin);
+        MethodAllowAnonymouses.Add(HttpMethod.Get, true);
         // Additional customization for specific events can be added here
     }
 
