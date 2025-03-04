@@ -14,7 +14,7 @@
         <Description>Database components for QuickAPI including data models, attributes, and EF Core extensions</Description>
         <Copyright>Copyright © 2025</Copyright>
         <PackageTags>api;crud;entity-framework;database;quickapi</PackageTags>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/metehandev/QuickAPI</PackageProjectUrl>
         <RepositoryUrl>https://github.com/metehandev/QuickAPI</RepositoryUrl>
         <RepositoryType>git</RepositoryType>

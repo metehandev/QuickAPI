@@ -5,11 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickAPI", "QuickAPI\QuickA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickAPI.Database", "QuickAPI.Database\QuickAPI.Database.csproj", "{3EBABFB2-5383-4DF5-8A6D-DD406E6D0CEE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipeline", "Pipeline", "{062CCB69-5DDC-4E23-AC33-E79AEE74AA1F}"
-	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickAPI.Shared", "QuickAPI.Shared\QuickAPI.Shared.csproj", "{C0B7C5D5-5E85-4077-B1C3-14D23D80747A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickAPI.Example", "QuickAPI.Example\QuickAPI.Example.csproj", "{D4773374-96CA-45AB-9D21-CAEECD5B8AFB}"

@@ -14,12 +14,15 @@
     <Description>Shared components for QuickAPI including DTOs and common utilities</Description>
     <Copyright>Copyright © 2025</Copyright>
     <PackageTags>api;crud;dto;shared;quickapi</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/metehandev/QuickAPI</PackageProjectUrl>
     <RepositoryUrl>https://github.com/metehandev/QuickAPI</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 </Project>
