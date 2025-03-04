@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    
+    <!-- Nuget Package Info -->
+    <PackageId>MY.QuickAPI.Shared</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Merkez Yazılım</Authors>
+    <Company>Merkez Yazılım</Company>
+    <Product>QuickAPI.Shared</Product>
+    <Description>Shared components for QuickAPI including DTOs and common utilities</Description>
+    <Copyright>Copyright © 2025</Copyright>
+    <PackageTags>api;crud;dto;shared;quickapi</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://www.merkez.com.tr</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/metehandev/QuickAPI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
