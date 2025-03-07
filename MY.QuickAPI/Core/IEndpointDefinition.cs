@@ -32,5 +32,9 @@ public interface IEndpointDefinition : IDefinition
     /// Add values to this dictionary to mark different HTTP Methods as AllowAnonymous
     /// </summary>
     public Dictionary<HttpMethod, bool> MethodAllowAnonymouses { get; set; }
-    // public int Order { get; set; }
+    
+    /// <summary>
+    /// Add default Navigation paths for DbQuery includes 
+    /// </summary>
+    public string[] IncludeFields { get; set; }
 }

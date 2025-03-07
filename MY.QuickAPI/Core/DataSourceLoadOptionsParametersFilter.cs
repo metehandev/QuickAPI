@@ -32,6 +32,21 @@ internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
     private static void CreateDataSourceLoadOptionsParameters(OpenApiOperation operation)
     {
         operation.Parameters ??= new List<OpenApiParameter>();
+        
+        // 0) IncludeFields (string array)
+        operation.Parameters.Add(new OpenApiParameter
+        {
+            Name = "includeFields",
+            In = ParameterLocation.Query,
+            Required = false,
+            Description =
+                "Include fields for requested Data Model. Example: Navigation1",
+            Schema = new OpenApiSchema
+            {
+                Type = "array",
+                Items = new OpenApiSchema { Type = "string" }
+            }
+        });
 
         // 1) requireTotalCount (bool)
         operation.Parameters.Add(new OpenApiParameter

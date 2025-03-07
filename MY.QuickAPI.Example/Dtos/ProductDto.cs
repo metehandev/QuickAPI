@@ -16,4 +16,6 @@ public record ProductDto : BaseDto
     /// Optional category name, populated when expanded
     /// </summary>
     public string? CategoryName { get; set; }
+
+    public CategoryDto? Category { get; set; }
 }

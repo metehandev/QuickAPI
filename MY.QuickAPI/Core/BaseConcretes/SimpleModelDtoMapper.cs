@@ -24,7 +24,7 @@ public abstract class SimpleModelDtoMapper<TModel, TDto>(ILogger<SimpleModelDtoM
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
-    public abstract TDto MapToDto(TModel model);
+    public abstract TDto? MapToDto(TModel? model);
 
     /// <summary>
     /// Override this method to set mappings between TDto => TModel
@@ -32,7 +32,7 @@ public abstract class SimpleModelDtoMapper<TModel, TDto>(ILogger<SimpleModelDtoM
     /// <param name="dto"></param>
     /// <param name="model"></param>
     /// <returns></returns>
-    public abstract TModel MapToModel(TDto dto, TModel? model = null);
+    public abstract TModel? MapToModel(TDto? dto, TModel? model = null);
 
     /// <summary>
     /// Base method to map models to Dtos using the MapToDto single method
@@ -41,7 +41,7 @@ public abstract class SimpleModelDtoMapper<TModel, TDto>(ILogger<SimpleModelDtoM
     /// <returns></returns>
     public virtual IEnumerable<TDto> MapToDtos(IEnumerable<TModel> models)
     {
-        return models.Select(MapToDto);
+        return models.Select(m => MapToDto(m)!);
     }
 
     /// <summary>
@@ -51,6 +51,6 @@ public abstract class SimpleModelDtoMapper<TModel, TDto>(ILogger<SimpleModelDtoM
     /// <returns></returns>
     public virtual IEnumerable<TModel> MapToModels(IEnumerable<TDto> dtos)
     {
-        return dtos.Select(dto => MapToModel(dto));
+        return dtos.Select(dto => MapToModel(dto)!);
     }
 }

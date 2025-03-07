@@ -4,6 +4,7 @@ using DevExtreme.AspNet.Data.ResponseModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MY.QuickAPI.Database.Core;
@@ -24,7 +25,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// Injected DbContext
     /// </summary>
     protected readonly BaseContext Context;
-    
+
     /// <summary>
     /// Injected Logger
     /// </summary>
@@ -35,22 +36,22 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// Assign method to run sync events on before GET method
     /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGet;
-    
+
     /// <summary>
     /// Assign method to run sync events on before GET Many method
     /// </summary>
     protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetMany;
-    
+
     /// <summary>
     /// Assign method to run sync events on before POST method
     /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePost;
-    
+
     /// <summary>
     /// Assign method to run sync events on before PUT method
     /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePut;
-    
+
     /// <summary>
     /// Assign method to run sync events on before DELETE method
     /// </summary>
@@ -61,49 +62,49 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// Assign method to run async events on before GET method
     /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeGetAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on before GET Many method
     /// </summary>
     protected Func<ClaimsPrincipal, DataSourceLoadOptionsBase?, Task>? OnBeforeGetManyAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on before POST method
     /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePostAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on before PUT method
     /// </summary>
     protected Func<ClaimsPrincipal, T, Task>? OnBeforePutAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on before DELETE method
     /// </summary>
     protected Func<ClaimsPrincipal, Guid, Task>? OnBeforeDeleteAsync;
 
     // After event handlers
-    
+
     /// <summary>
     /// Assign method to run sync events on after GET method
     /// </summary>
     protected Func<T, Task>? OnAfterGet;
-    
+
     /// <summary>
     /// Assign method to run sync events on after GET Many method
     /// </summary>
     protected Func<LoadResult, Task>? OnAfterGetMany;
-    
+
     /// <summary>
     /// Assign method to run sync events on after POST method
     /// </summary>
     protected Func<T, Task>? OnAfterPost;
-    
+
     /// <summary>
     /// Assign method to run sync events on after PUT method
     /// </summary>
     protected Func<T, Task>? OnAfterPut;
-    
+
     /// <summary>
     /// Assign method to run sync events on after DELETE method
     /// </summary>
@@ -114,22 +115,22 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// Assign method to run async events on after GET method
     /// </summary>
     protected Func<T, Task>? OnAfterGetAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on after GET Many method
     /// </summary>
     protected Func<LoadResult, Task>? OnAfterGetManyAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on after POST method
     /// </summary>
     protected Func<T, Task>? OnAfterPostAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on after PUT method
     /// </summary>
     protected Func<T, Task>? OnAfterPutAsync;
-    
+
     /// <summary>
     /// Assign method to run async events on after DELETE method
     /// </summary>
@@ -147,7 +148,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         Context = context;
         Logger = logger;
     }
-    
+
     /// <summary>
     /// Define method to set REST Method mappings using minimal APIs 
     /// </summary>
@@ -250,7 +251,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         return Ok(list);
     }
 
-    
+
     /// <summary>
     /// Register any necessary methods to DI 
     /// </summary>
@@ -264,10 +265,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// </summary>
     /// <param name="claimsPrincipal"></param>
     /// <param name="id"></param>
+    /// <param name="includeFields"></param>
     /// <returns></returns>
     protected virtual async Task<IResult> GetAsync(
         ClaimsPrincipal claimsPrincipal,
-        Guid id)
+        Guid id,
+        string[]? includeFields = null)
     {
         try
         {
@@ -279,7 +282,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
-            var item = await Context.Set<T>().FindAsync(id);
+
+            var dbSet = IncludeNavigations(Context.Set<T>().AsQueryable(), includeFields);
+            var item = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (item is null)
             {
                 return NotFound();
@@ -308,7 +313,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <param name="options"></param>
     /// <returns></returns>
     protected virtual async Task<IResult> GetManyAsync(
-        ClaimsPrincipal claimsPrincipal, 
+        ClaimsPrincipal claimsPrincipal,
         BindableDataSourceLoadOptions options)
     {
         try
@@ -321,8 +326,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             OnBeforeGetManyAsync?.Invoke(claimsPrincipal, options);
 
             Logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
-            var items = Context.Set<T>().AsQueryable();
-            var result = await DataSourceLoader.LoadAsync(items, options);
+            
+            var dbSet = IncludeNavigations(Context.Set<T>().AsQueryable(), options.IncludeFields);
+            var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             if (OnAfterGetMany is not null)
             {
@@ -382,7 +388,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             return BadRequest(ex.Message);
         }
     }
-    
+
     /// <summary>
     /// Overridable base method for PUT method
     /// </summary>
@@ -476,5 +482,30 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             logger.LogError(ex, "Error on RemoveAsync");
             return BadRequest(ex.Message);
         }
+    }
+
+    private IQueryable<T> IncludeNavigations(IQueryable<T> dbSet, string[]? includeFields)
+    {
+        if (includeFields?.Length > 0)
+        {
+            foreach (var includeField in includeFields)
+            {
+                dbSet = dbSet.Include(includeField);
+            }
+
+            return dbSet;
+        }
+
+        if (IncludeFields.Length > 0)
+        {
+            foreach (var includeField in IncludeFields)
+            {
+                dbSet = dbSet.Include(includeField);
+            }
+
+            return dbSet;
+        }
+
+        return dbSet;
     }
 }

@@ -4,6 +4,7 @@ using DevExtreme.AspNet.Data.ResponseModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MY.QuickAPI.Database.Core;
@@ -285,10 +286,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// </summary>
     /// <param name="claimsPrincipal"></param>
     /// <param name="id"></param>
+    /// <param name="includeFields"></param>
     /// <returns></returns>
     protected virtual async Task<IResult> GetAsync(
         ClaimsPrincipal claimsPrincipal,
-        Guid id)
+        Guid id,
+        string[]? includeFields = null)
     {
         try
         {
@@ -300,7 +303,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(TModel).Name, id);
-            var entity = await Context.Set<TModel>().FindAsync(id);
+            var dbSet = IncludeNavigations(Context.Set<TModel>().AsQueryable(), includeFields);
+            var entity = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (entity is null)
             {
                 return NotFound();
@@ -344,8 +348,9 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             OnBeforeGetManyAsync?.Invoke(claimsPrincipal, options);
 
             Logger.LogInformation("Getting {TypeName} items", typeof(TModel).Name);
-            var items = Context.Set<TModel>().AsQueryable();
-            var result = await DataSourceLoader.LoadAsync(items, options);
+            
+            var dbSet = IncludeNavigations(Context.Set<TModel>().AsQueryable(), options.IncludeFields);
+            var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             result.data = Mapper.MapToDtos(result.data.Cast<TModel>()).ToList();
             
@@ -510,5 +515,30 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             logger.LogError(ex, "Error on RemoveAsync");
             return BadRequest(ex.Message);
         }
+    }
+    
+    private IQueryable<TModel> IncludeNavigations(IQueryable<TModel> dbSet, string[]? includeFields)
+    {
+        if (includeFields?.Length > 0)
+        {
+            foreach (var includeField in includeFields)
+            {
+                dbSet = dbSet.Include(includeField);
+            }
+
+            return dbSet;
+        }
+
+        if (IncludeFields.Length > 0)
+        {
+            foreach (var includeField in IncludeFields)
+            {
+                dbSet = dbSet.Include(includeField);
+            }
+
+            return dbSet;
+        }
+
+        return dbSet;
     }
 }

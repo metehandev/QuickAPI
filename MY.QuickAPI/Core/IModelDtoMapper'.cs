@@ -17,7 +17,7 @@ public interface IModelDtoMapper<TModel, TDto> : IModelDtoMapper
     /// </summary>
     /// <param name="model">The entity model to map</param>
     /// <returns>A new DTO instance with values from the model</returns>
-    TDto MapToDto(TModel model);
+    TDto? MapToDto(TModel? model);
     
     /// <summary>
     /// Maps a DTO to an entity model
@@ -25,7 +25,7 @@ public interface IModelDtoMapper<TModel, TDto> : IModelDtoMapper
     /// <param name="dto">The DTO to map</param>
     /// <param name="model">Optional existing model to update. If null, a new model will be created.</param>
     /// <returns>The updated or new entity model</returns>
-    TModel MapToModel(TDto dto, TModel? model = null);
+    TModel? MapToModel(TDto? dto, TModel? model = null);
     
     /// <summary>
     /// Maps a collection of entity models to DTOs

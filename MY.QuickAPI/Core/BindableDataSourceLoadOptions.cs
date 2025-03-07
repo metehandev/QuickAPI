@@ -11,6 +11,11 @@ namespace MY.QuickAPI.Core;
 public class BindableDataSourceLoadOptions : DataSourceLoadOptionsBase
 {
     /// <summary>
+    /// Include fields for requested Data Model
+    /// </summary>
+    public string[]? IncludeFields { get; set; }
+    
+    /// <summary>
     /// 
     /// </summary>
     /// <param name="httpContext"></param>
@@ -19,6 +24,10 @@ public class BindableDataSourceLoadOptions : DataSourceLoadOptionsBase
     {
         var loadOptions = new BindableDataSourceLoadOptions();
         DataSourceLoadOptionsParser.Parse(loadOptions, key => httpContext.Request.Query[key]);
+        if (httpContext.Request.Query.TryGetValue("includeFields", out var includeFields))
+        {
+            loadOptions.IncludeFields = includeFields!;
+        }
         return ValueTask.FromResult(loadOptions);
     }
 }

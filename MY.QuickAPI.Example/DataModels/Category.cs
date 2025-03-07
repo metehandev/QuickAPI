@@ -15,4 +15,6 @@ namespace MY.QuickAPI.Example.DataModels;
 public class Category : BaseModel, ITenantModel
 {
     public Guid TenantId { get; set; }
+    
+    public ICollection<Product>? Products { get; set; }
 }

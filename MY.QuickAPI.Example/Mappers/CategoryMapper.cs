@@ -1,4 +1,4 @@
-using MY.QuickAPI.Core;
+using MY.QuickAPI.Core.BaseConcretes;
 using MY.QuickAPI.Example.DataModels;
 using MY.QuickAPI.Example.Dtos;
 
@@ -7,10 +7,20 @@ namespace MY.QuickAPI.Example.Mappers;
 /// <summary>
 /// Mapper for converting between Category entity and CategoryDto
 /// </summary>
-public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
+public class CategoryMapper : SimpleModelDtoMapper<Category, CategoryDto>
 {
-    public CategoryDto MapToDto(Category model)
+
+    public CategoryMapper(ILogger<CategoryMapper> logger) : base(logger)
     {
+    }
+    
+    public override CategoryDto? MapToDto(Category? model)
+    {
+        if (model is null)
+        {
+            return null;
+        }
+        
         var dto = new CategoryDto
         {
             Id = model.Id,
@@ -24,8 +34,13 @@ public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
         return dto;
     }
 
-    public Category MapToModel(CategoryDto dto, Category? model = null)
+    public override Category? MapToModel(CategoryDto? dto, Category? model = null)
     {
+        if (dto is null)
+        {
+            return null;
+        }
+        
         model ??= new Category();
 
         model.Id = dto.Id;
@@ -33,15 +48,5 @@ public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
         model.Description = dto.Description; // Using Description field for Description
 
         return model;
-    }
-
-    public IEnumerable<CategoryDto> MapToDtos(IEnumerable<Category> models)
-    {
-        return models.Select(MapToDto);
-    }
-
-    public IEnumerable<Category> MapToModels(IEnumerable<CategoryDto> dtos)
-    {
-        return dtos.Select(dto => MapToModel(dto));
     }
 }

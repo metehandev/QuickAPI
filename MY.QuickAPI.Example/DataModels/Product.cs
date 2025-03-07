@@ -8,13 +8,14 @@ namespace MY.QuickAPI.Example.DataModels;
 // Example 1: Using EndpointDefinition attribute with DtoType property
 [EndpointDefinition(
     AutomaticEndpointCreation = true,
-    CrudOperation = CrudOperation.All, 
+    CrudOperation = CrudOperation.All,
     RequireAuthorization = true,
     PostRole = nameof(UserRole.Admin),
     PutRole = nameof(UserRole.Admin),
     DeleteRole = nameof(UserRole.Admin),
     GetRole = nameof(UserRole.User),
     DtoType = typeof(ProductDto) // Specify the DTO type to use for endpoints
+    // IncludeFields = ["Category"]
 )]
 public class Product : BaseModel, ITenantModel
 {

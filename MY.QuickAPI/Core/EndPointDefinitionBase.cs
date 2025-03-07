@@ -34,12 +34,16 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
     /// </summary>
     public Dictionary<HttpMethod, bool> MethodAllowAnonymouses { get; set; } = new();
 
+    /// <summary>
+    /// Add default Navigation paths for DbQuery includes 
+    /// </summary>
+    public string[] IncludeFields { get; set; } = [];
+    
     private bool IsAllowAnonymous(HttpMethod method)
     {
         return MethodAllowAnonymouses.TryGetValue(method, out var allowAnonymous) && allowAnonymous;
     }
-
-
+    
     /// <summary>
     /// 
     /// </summary>

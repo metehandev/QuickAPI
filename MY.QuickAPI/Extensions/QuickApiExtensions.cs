@@ -20,7 +20,7 @@ public static class QuickApiExtensions
     private static void MapConfigurationSettings(this IServiceCollection services, params Type[] externalTypes)
     {
         externalTypes
-            .SelectMany(m => m.Assembly.ExportedTypes)
+            .SelectMany(m => m.Assembly.DefinedTypes)
             .Where(m => m.IsAssignableTo(typeof(ISettings))
                         && m is { IsInterface: false, IsAbstract: false })
             .Execute(services.RegisterSettings);
@@ -29,7 +29,7 @@ public static class QuickApiExtensions
     private static void MapHelpers(this IServiceCollection services, params Type[] externalTypes)
     {
         externalTypes
-            .SelectMany(m => m.Assembly.ExportedTypes)
+            .SelectMany(m => m.Assembly.DefinedTypes)
             .Where(m => m.IsAssignableTo(typeof(IHelper))
                         && m is { IsInterface: false, IsAbstract: false })
             .Execute(services.RegisterHelper);
@@ -133,7 +133,7 @@ public static class QuickApiExtensions
         var externalDefinitionTypes = types
             .Select(m => m.Assembly)
             .Except([typeof(QuickApiExtensions).Assembly])
-            .SelectMany(m => m.ExportedTypes)
+            .SelectMany(m => m.DefinedTypes)
             .Where(m => m.IsAssignableTo(typeof(IDefinition)) && !m.IsAssignableTo(typeof(IEndpointDefinition))
                                                               && m is
                                                               {
@@ -145,7 +145,7 @@ public static class QuickApiExtensions
 
         var internalDefinitionTypes = typeof(IDefinition)
             .Assembly
-            .ExportedTypes
+            .DefinedTypes
             .Where(m => m.IsAssignableTo(typeof(IDefinition)) && !m.IsAssignableTo(typeof(IEndpointDefinition))
                                                               && m is
                                                               {
@@ -178,7 +178,7 @@ public static class QuickApiExtensions
         }
         
         var baseModelTypes = types
-            .SelectMany(m => m.Assembly.ExportedTypes)
+            .SelectMany(m => m.Assembly.DefinedTypes)
             .Where(m => m.IsAssignableTo(typeof(BaseModel))
                         && m is { IsInterface: false, IsAbstract: false }
                         && m.GetCustomAttribute<EndpointDefinitionAttribute>() != null);
@@ -197,7 +197,7 @@ public static class QuickApiExtensions
         var externalEndpointTypes = types
             .Select(m => m.Assembly)
             .Except([typeof(QuickApiExtensions).Assembly])
-            .SelectMany(m => m.ExportedTypes)
+            .SelectMany(m => m.DefinedTypes)
             .Where(m => m.IsAssignableTo(typeof(IEndpointDefinition))
                         && m is { IsInterface: false, IsAbstract: false, IsGenericType: false })
             .OrderBy(m => m.GetCustomAttribute<DefinitionOrderAttribute>()?.Order ?? int.MaxValue)
@@ -205,7 +205,7 @@ public static class QuickApiExtensions
 
         var internalEndpointTypes = typeof(IEndpointDefinition)
             .Assembly
-            .ExportedTypes
+            .DefinedTypes
             .Where(m => m.IsAssignableTo(typeof(IEndpointDefinition))
                         && m is { IsInterface: false, IsAbstract: false, IsGenericType: false })
             .OrderBy(m => m.GetCustomAttribute<DefinitionOrderAttribute>()?.Order ?? int.MaxValue)
@@ -291,6 +291,7 @@ public static class QuickApiExtensions
         };
 
         endpointDefinition.RequireAuthorization = endpointDefinitionAttribute.RequireAuthorization;
+        endpointDefinition.IncludeFields = endpointDefinitionAttribute.IncludeFields;
         endpointDefinition.DefineServices(services);
         return endpointDefinition;
     }
