@@ -44,4 +44,9 @@ public class EndpointDefinitionAttribute : Attribute
     /// The DTO type must inherit from BaseDto and have compatible property names.
     /// </summary>
     public Type? DtoType { get; set; } = null;
+
+    /// <summary>
+    /// Add default Navigation paths for DbQuery includes 
+    /// </summary>
+    public string[] IncludeFields { get; set; } = [];
 }
