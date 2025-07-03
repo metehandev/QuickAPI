@@ -178,6 +178,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         {
             var get = app.MapGet($"/api/{typeName}", GetAsync)
                 .Produces<TDto>()
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.Get)} {typeName}")
@@ -189,6 +191,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         {
             var getMany = app.MapGet($"/api/{groupName}", GetManyAsync)
                 .Produces<LoadResult>()
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.GetMany)} {typeName}")
@@ -199,7 +202,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         if (CrudOperation.HasFlag(CrudOperation.Post))
         {
             var post = app.MapPost($"/api/{typeName}", AddAsync)
-                .Produces<TDto>(302)
+                .Produces<TDto>(StatusCodes.Status302Found)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.Post)} {typeName}")
@@ -210,7 +214,9 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         if (CrudOperation.HasFlag(CrudOperation.Put))
         {
             var put = app.MapPut($"/api/{typeName}", UpdateAsync)
-                .Produces<TDto>(302)
+                .Produces<TDto>(StatusCodes.Status302Found)
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.Put)} {typeName}")
@@ -221,7 +227,9 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         if (CrudOperation.HasFlag(CrudOperation.Delete))
         {
             var delete = app.MapDelete($"/api/{typeName}", RemoveAsync)
-                .Produces(200)
+                .Produces(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.Delete)} {typeName}")
@@ -233,6 +241,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         {
             var postMany = app.MapPost($"/api/{groupName}", AddManyAsync)
                 .Produces<IEnumerable<TDto>>()
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(dtoType)
                 .WithDescription($"{nameof(CrudOperation.PostMany)} {typeName}")

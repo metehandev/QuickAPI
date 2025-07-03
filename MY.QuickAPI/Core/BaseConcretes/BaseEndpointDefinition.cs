@@ -167,6 +167,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var get = app.MapGet($"/api/{typeName}", GetAsync)
                 .Produces<T>()
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.Get)} {typeName}")
@@ -178,6 +180,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var getMany = app.MapGet($"/api/{groupName}", GetManyAsync)
                 .Produces<LoadResult>()
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.GetMany)} {typeName}")
@@ -188,7 +191,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         if (CrudOperation.HasFlag(CrudOperation.Post))
         {
             var post = app.MapPost($"/api/{typeName}", AddAsync)
-                .Produces<T>(302)
+                .Produces<T>(StatusCodes.Status302Found)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.Post)} {typeName}")
@@ -199,7 +203,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         if (CrudOperation.HasFlag(CrudOperation.Put))
         {
             var put = app.MapPut($"/api/{typeName}", UpdateAsync)
-                .Produces<T>(302)
+                .Produces<T>(StatusCodes.Status302Found)
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.Put)} {typeName}")
@@ -210,7 +216,9 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         if (CrudOperation.HasFlag(CrudOperation.Delete))
         {
             var delete = app.MapDelete($"/api/{typeName}", RemoveAsync)
-                .Produces(200)
+                .Produces(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status404NotFound)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.Delete)} {typeName}")
@@ -222,6 +230,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         {
             var postMany = app.MapPost($"/api/{groupName}", AddManyAsync)
                 .Produces<IEnumerable<T>>()
+                .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithTags(groupName)
                 .WithMetadata(type)
                 .WithDescription($"{nameof(CrudOperation.PostMany)} {typeName}")
@@ -245,10 +254,18 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         ClaimsPrincipal claimsPrincipal,
         [FromBody] IEnumerable<T> items)
     {
-        var list = items.ToList();
-        await Context.Set<T>().AddRangeAsync(list);
-        await Context.SaveChangesAsync();
-        return Ok(list);
+        try
+        {
+            var list = items.ToList();
+            await Context.Set<T>().AddRangeAsync(list);
+            await Context.SaveChangesAsync();
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on AddManyAsync");
+            return BadRequest(ex.Message);
+        }
     }
 
 
@@ -326,7 +343,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             OnBeforeGetManyAsync?.Invoke(claimsPrincipal, options);
 
             Logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
-            
+
             var dbSet = IncludeNavigations(Context.Set<T>().AsQueryable(), options.IncludeFields);
             var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
