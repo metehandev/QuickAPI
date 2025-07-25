@@ -263,8 +263,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on AddManyAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on AddManyAsync for {TypeName}: {ErrorMessage}", typeof(T).Name, ex.Message);
+            return BadRequest($"An error occurred while adding multiple {typeof(T).Name} items: {ex.Message}");
         }
     }
 
@@ -300,10 +300,11 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
 
-            var dbSet = IncludeNavigations(Context.Set<T>().AsQueryable(), includeFields);
+            var dbSet = IncludeNavigations(Context.Set<T>().AsNoTracking(), includeFields);
             var item = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (item is null)
             {
+                Logger.LogWarning("No {TypeName} found for id {Id}", typeof(T).Name, id);
                 return NotFound();
             }
 
@@ -318,8 +319,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on GetAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on GetAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(T).Name, id, ex.Message);
+            return BadRequest($"An error occurred while retrieving {typeof(T).Name} with id {id}: {ex.Message}");
         }
     }
 
@@ -344,7 +345,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             Logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
 
-            var dbSet = IncludeNavigations(Context.Set<T>().AsQueryable(), options.IncludeFields);
+            var dbSet = IncludeNavigations(Context.Set<T>().AsNoTracking(), options.IncludeFields);
             var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             if (OnAfterGetMany is not null)
@@ -358,8 +359,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on GetManyAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on GetManyAsync for {TypeName}: {ErrorMessage}", typeof(T).Name, ex.Message);
+            return BadRequest($"An error occurred while retrieving list of {typeof(T).Name}: {ex.Message}");
         }
     }
 
@@ -401,8 +402,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on AddAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on AddAsync for {TypeName}: {ErrorMessage}", typeof(T).Name, ex.Message);
+            return BadRequest($"An error occurred while adding {typeof(T).Name}: {ex.Message}");
         }
     }
 
@@ -433,6 +434,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             if (result is null)
             {
+                Logger.LogWarning("No {TypeName} found to update for id {Id}", typeof(T).Name, item.Id);
                 return NotFound();
             }
 
@@ -450,8 +452,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on UpdateAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on UpdateAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(T).Name, item.Id, ex.Message);
+            return BadRequest($"An error occurred while updating {typeof(T).Name} with id {item.Id}: {ex.Message}");
         }
     }
 
@@ -480,6 +482,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             var result = await Context.Set<T>().FindAsync(id);
             if (result is null)
             {
+                logger.LogWarning("No {TypeName} found to delete for id {Id}", typeof(T).Name, id);
                 return NotFound();
             }
 
@@ -496,8 +499,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error on RemoveAsync");
-            return BadRequest(ex.Message);
+            logger.LogError(ex, "Error on RemoveAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(T).Name, id, ex.Message);
+            return BadRequest($"An error occurred while deleting {typeof(T).Name} with id {id}: {ex.Message}");
         }
     }
 
@@ -513,16 +516,15 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             return dbSet;
         }
 
-        if (IncludeFields.Length > 0)
-        {
-            foreach (var includeField in IncludeFields)
-            {
-                dbSet = dbSet.Include(includeField);
-            }
-
+        if (IncludeFields.Length <= 0) 
             return dbSet;
+        
+        foreach (var includeField in IncludeFields)
+        {
+            dbSet = dbSet.Include(includeField);
         }
 
         return dbSet;
+
     }
 }

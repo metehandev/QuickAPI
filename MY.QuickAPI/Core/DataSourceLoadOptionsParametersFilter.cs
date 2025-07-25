@@ -138,15 +138,15 @@ internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
             Schema = new OpenApiSchema
             {
                 Type = "array",
-                Items = new OpenApiSchema
-                {
-                    Type = "object",
-                    Properties = new Dictionary<string, OpenApiSchema>
-                    {
-                        ["selector"] = new() { Type = "string" },
-                        ["desc"] = new() { Type = "boolean" }
-                    }
-                }
+                // Items = new OpenApiSchema
+                // {
+                //     Type = "object",
+                //     Properties = new Dictionary<string, OpenApiSchema>
+                //     {
+                //         ["selector"] = new() { Type = "string" },
+                //         ["desc"] = new() { Type = "boolean" }
+                //     }
+                // }
             }
         });
 
@@ -161,17 +161,17 @@ internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
             Schema = new OpenApiSchema
             {
                 Type = "array",
-                Items = new OpenApiSchema
-                {
-                    Type = "object",
-                    Properties = new Dictionary<string, OpenApiSchema>
-                    {
-                        ["selector"] = new() { Type = "string" },
-                        ["desc"] = new() { Type = "boolean" },
-                        ["groupInterval"] = new() { Type = "string" },
-                        ["isExpanded"] = new() { Type = "boolean" }
-                    }
-                }
+                // Items = new OpenApiSchema
+                // {
+                //     Type = "object",
+                //     Properties = new Dictionary<string, OpenApiSchema>
+                //     {
+                //         ["selector"] = new() { Type = "string" },
+                //         ["desc"] = new() { Type = "boolean" },
+                //         ["groupInterval"] = new() { Type = "string" },
+                //         ["isExpanded"] = new() { Type = "boolean" }
+                //     }
+                // }
             }
         });
 
@@ -201,15 +201,15 @@ internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
             Schema = new OpenApiSchema
             {
                 Type = "array",
-                Items = new OpenApiSchema
-                {
-                    Type = "object",
-                    Properties = new Dictionary<string, OpenApiSchema>
-                    {
-                        ["selector"] = new() { Type = "string" },
-                        ["summaryType"] = new() { Type = "string" }
-                    }
-                }
+                // Items = new OpenApiSchema
+                // {
+                //     Type = "object",
+                //     Properties = new Dictionary<string, OpenApiSchema>
+                //     {
+                //         ["selector"] = new() { Type = "string" },
+                //         ["summaryType"] = new() { Type = "string" }
+                //     }
+                // }
             }
         });
 
@@ -224,15 +224,15 @@ internal class DataSourceLoadOptionsParametersFilter : IDocumentFilter
             Schema = new OpenApiSchema
             {
                 Type = "array",
-                Items = new OpenApiSchema
-                {
-                    Type = "object",
-                    Properties = new Dictionary<string, OpenApiSchema>
-                    {
-                        ["selector"] = new() { Type = "string" },
-                        ["summaryType"] = new() { Type = "string" }
-                    }
-                }
+                // Items = new OpenApiSchema
+                // {
+                //     Type = "object",
+                //     Properties = new Dictionary<string, OpenApiSchema>
+                //     {
+                //         ["selector"] = new() { Type = "string" },
+                //         ["summaryType"] = new() { Type = "string" }
+                //     }
+                // }
             }
         });
 

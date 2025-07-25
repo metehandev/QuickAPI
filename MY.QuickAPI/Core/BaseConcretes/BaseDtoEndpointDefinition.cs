@@ -277,8 +277,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on AddManyAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on AddManyAsync for {TypeName}: {ErrorMessage}", typeof(TModel).Name, ex.Message);
+            return BadRequest($"An error occurred while adding multiple {typeof(TModel).Name} items: {ex.Message}");
         }
     }
 
@@ -312,10 +312,11 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(TModel).Name, id);
-            var dbSet = IncludeNavigations(Context.Set<TModel>().AsQueryable(), includeFields);
+            var dbSet = IncludeNavigations(Context.Set<TModel>().AsNoTracking(), includeFields);
             var entity = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (entity is null)
             {
+                Logger.LogWarning("No {TypeName} found for id {Id}", typeof(TModel).Name, id);
                 return NotFound();
             }
 
@@ -332,8 +333,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on GetAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on GetAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(TModel).Name, id, ex.Message);
+            return BadRequest($"An error occurred while retrieving {typeof(TModel).Name} with id {id}: {ex.Message}");
         }
     }
 
@@ -358,7 +359,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
 
             Logger.LogInformation("Getting {TypeName} items", typeof(TModel).Name);
             
-            var dbSet = IncludeNavigations(Context.Set<TModel>().AsQueryable(), options.IncludeFields);
+            var dbSet = IncludeNavigations(Context.Set<TModel>().AsNoTracking(), options.IncludeFields);
             var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             result.data = Mapper.MapToDtos(result.data.Cast<TModel>()).ToList();
@@ -374,8 +375,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on GetManyAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on GetManyAsync for {TypeName}: {ErrorMessage}", typeof(TModel).Name, ex.Message);
+            return BadRequest($"An error occurred while retrieving list of {typeof(TModel).Name}: {ex.Message}");
         }
     }
 
@@ -421,8 +422,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on AddAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on AddAsync for {TypeName}: {ErrorMessage}", typeof(TModel).Name, ex.Message);
+            return BadRequest($"An error occurred while adding {typeof(TModel).Name}: {ex.Message}");
         }
     }
 
@@ -452,6 +453,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             var existingEntity = await Context.Set<TModel>().FindAsync(dto.Id);
             if (existingEntity is null)
             {
+                Logger.LogWarning("No {TypeName} found to update for id {Id}", typeof(TModel).Name, dto.Id);
                 return NotFound();
             }
 
@@ -475,8 +477,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error on UpdateAsync");
-            return BadRequest(ex.Message);
+            Logger.LogError(ex, "Error on UpdateAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(TModel).Name, dto.Id, ex.Message);
+            return BadRequest($"An error occurred while updating {typeof(TModel).Name} with id {dto.Id}: {ex.Message}");
         }
     }
 
@@ -505,6 +507,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             var entity = await Context.Set<TModel>().FindAsync(id);
             if (entity is null)
             {
+                logger.LogWarning("No {TypeName} found to delete for id {Id}", typeof(TModel).Name, id);
                 return NotFound();
             }
 
@@ -521,8 +524,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error on RemoveAsync");
-            return BadRequest(ex.Message);
+            logger.LogError(ex, "Error on RemoveAsync for {TypeName} id {Id}: {ErrorMessage}", typeof(TModel).Name, id, ex.Message);
+            return BadRequest($"An error occurred while deleting {typeof(TModel).Name} with id {id}: {ex.Message}");
         }
     }
     
