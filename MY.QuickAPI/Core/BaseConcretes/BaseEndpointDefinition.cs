@@ -22,11 +22,6 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     where T : BaseModel
 {
     /// <summary>
-    /// Injected DbContext
-    /// </summary>
-    protected readonly BaseContext Context;
-
-    /// <summary>
     /// Injected Logger
     /// </summary>
     protected readonly ILogger<BaseEndpointDefinition<T>> Logger;
@@ -137,15 +132,11 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     protected Func<Task>? OnAfterDeleteAsync;
 
     /// <summary>
-    /// Base constructor to inject Context and Logger
+    /// Base constructor to inject Logger
     /// </summary>
-    /// <param name="context"></param>
     /// <param name="logger"></param>
-    public BaseEndpointDefinition(
-        BaseContext context,
-        ILogger<BaseEndpointDefinition<T>> logger)
+    public BaseEndpointDefinition(ILogger<BaseEndpointDefinition<T>> logger)
     {
-        Context = context;
         Logger = logger;
     }
 
@@ -247,18 +238,20 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for POST Many method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="items"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="items">Entities to add in bulk.</param>
+    /// <returns>HTTP result with created entities or error.</returns>
     protected virtual async Task<IResult> AddManyAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         [FromBody] IEnumerable<T> items)
     {
         try
         {
             var list = items.ToList();
-            await Context.Set<T>().AddRangeAsync(list);
-            await Context.SaveChangesAsync();
+            await context.Set<T>().AddRangeAsync(list);
+            await context.SaveChangesAsync();
             return Ok(list);
         }
         catch (Exception ex)
@@ -280,11 +273,13 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for GET method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="id"></param>
-    /// <param name="includeFields"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="id">Entity identifier.</param>
+    /// <param name="includeFields">Navigation properties to include.</param>
+    /// <returns>HTTP result with the entity or error.</returns>
     protected virtual async Task<IResult> GetAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         Guid id,
         string[]? includeFields = null)
@@ -300,7 +295,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(T).Name, id);
 
-            var dbSet = IncludeNavigations(Context.Set<T>().AsNoTracking(), includeFields);
+            var dbSet = IncludeNavigations(context.Set<T>().AsNoTracking(), includeFields);
             var item = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (item is null)
             {
@@ -327,10 +322,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for GET Many method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="options"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="options">DevExtreme data loading options.</param>
+    /// <returns>Paged/sorted data result or error.</returns>
     protected virtual async Task<IResult> GetManyAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         BindableDataSourceLoadOptions options)
     {
@@ -345,7 +342,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             Logger.LogInformation("Getting {TypeName} items", typeof(T).Name);
 
-            var dbSet = IncludeNavigations(Context.Set<T>().AsNoTracking(), options.IncludeFields);
+            var dbSet = IncludeNavigations(context.Set<T>().AsNoTracking(), options.IncludeFields);
             var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             if (OnAfterGetMany is not null)
@@ -367,10 +364,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for POST method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="item"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="item">Entity to create.</param>
+    /// <returns>Created result with location or error.</returns>
     protected virtual async Task<IResult> AddAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         T item)
     {
@@ -388,8 +387,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
 
             Logger.LogInformation("Adding new {TypeName}", typeName);
 
-            await Context.Set<T>().AddAsync(item);
-            await Context.SaveChangesAsync();
+            await context.Set<T>().AddAsync(item);
+            await context.SaveChangesAsync();
 
             if (OnAfterPost is not null)
             {
@@ -410,10 +409,12 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for PUT method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="item"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="item">Entity to update.</param>
+    /// <returns>Updated result or error.</returns>
     protected virtual async Task<IResult> UpdateAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         T item)
     {
@@ -430,7 +431,7 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             var typeName = type.Name;
             Logger.LogInformation("Updating {TypeName}", typeName);
 
-            var result = await Context.Set<T>().FindAsync(item.Id);
+            var result = await context.Set<T>().FindAsync(item.Id);
 
             if (result is null)
             {
@@ -438,8 +439,8 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
                 return NotFound();
             }
 
-            Context.Entry(result).CurrentValues.SetValues(item);
-            await Context.SaveChangesAsync();
+            context.Entry(result).CurrentValues.SetValues(item);
+            await context.SaveChangesAsync();
 
             if (OnAfterPut is not null)
             {
@@ -460,11 +461,13 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
     /// <summary>
     /// Overridable base method for DELETE method
     /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="id"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="logger">Logger instance for diagnostics.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="id">Entity identifier.</param>
+    /// <returns>OK or error result.</returns>
     protected virtual async Task<IResult> RemoveAsync(
+        BaseContext context,
         ILogger<BaseEndpointDefinition<T>> logger,
         ClaimsPrincipal claimsPrincipal,
         Guid id)
@@ -479,15 +482,15 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             OnBeforeDeleteAsync?.Invoke(claimsPrincipal, id);
 
             logger.LogInformation("Deleting {TypeName} for id {Id}", typeof(T).Name, id);
-            var result = await Context.Set<T>().FindAsync(id);
+            var result = await context.Set<T>().FindAsync(id);
             if (result is null)
             {
                 logger.LogWarning("No {TypeName} found to delete for id {Id}", typeof(T).Name, id);
                 return NotFound();
             }
 
-            Context.Set<T>().Remove(result);
-            await Context.SaveChangesAsync();
+            context.Set<T>().Remove(result);
+            await context.SaveChangesAsync();
 
             OnAfterDeleteAsync?.Invoke();
             if (OnAfterDelete is not null)

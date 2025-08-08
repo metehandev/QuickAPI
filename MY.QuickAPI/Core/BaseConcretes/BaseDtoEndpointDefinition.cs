@@ -25,10 +25,6 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     where TDto : BaseDto, new()
 {
     /// <summary>
-    /// Injected DbContext
-    /// </summary>
-    protected readonly BaseContext Context;
-    /// <summary>
     /// Injected Logger
     /// </summary>
     protected readonly ILogger<BaseDtoEndpointDefinition<TModel, TDto>> Logger;
@@ -145,15 +141,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Base constructor for BaseDtoEndpointDefinition
     /// </summary>
-    /// <param name="context"></param>
     /// <param name="logger"></param>
     /// <param name="mapper"></param>
     public BaseDtoEndpointDefinition(
-        BaseContext context,
         ILogger<BaseDtoEndpointDefinition<TModel, TDto>> logger,
         IModelDtoMapper<TModel, TDto> mapper)
     {
-        Context = context;
         Logger = logger;
         Mapper = mapper;
     }
@@ -258,10 +251,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for POST Many method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="dtos"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="dtos">DTOs to add in bulk.</param>
+    /// <returns>HTTP result with created DTOs or error.</returns>
     protected virtual async Task<IResult> AddManyAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         [FromBody] IEnumerable<TDto> dtos)
     {
@@ -269,8 +264,8 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
         {
             var entities = Mapper.MapToModels(dtos).ToList();
             
-            await Context.Set<TModel>().AddRangeAsync(entities);
-            await Context.SaveChangesAsync();
+            await context.Set<TModel>().AddRangeAsync(entities);
+            await context.SaveChangesAsync();
             
             var resultDtos = Mapper.MapToDtos(entities).ToList();
             return Ok(resultDtos);
@@ -293,11 +288,13 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for GET method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="id"></param>
-    /// <param name="includeFields"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="id">Entity identifier.</param>
+    /// <param name="includeFields">Navigation properties to include.</param>
+    /// <returns>HTTP result with DTO or error.</returns>
     protected virtual async Task<IResult> GetAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         Guid id,
         string[]? includeFields = null)
@@ -312,7 +309,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             OnBeforeGetAsync?.Invoke(claimsPrincipal, id);
 
             Logger.LogInformation("Getting {TypeName} for id {Id}", typeof(TModel).Name, id);
-            var dbSet = IncludeNavigations(Context.Set<TModel>().AsNoTracking(), includeFields);
+            var dbSet = IncludeNavigations(context.Set<TModel>().AsNoTracking(), includeFields);
             var entity = await dbSet.FirstOrDefaultAsync(m => m.Id == id);
             if (entity is null)
             {
@@ -321,6 +318,11 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             }
 
             var dto = Mapper.MapToDto(entity);
+
+            if (dto is null)
+            {
+                return NoContent();
+            }
 
             if (OnAfterGet is not null)
             {
@@ -341,10 +343,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for GET Many method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="options"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="options">DevExtreme data loading options.</param>
+    /// <returns>Paged/sorted data result or error.</returns>
     protected virtual async Task<IResult> GetManyAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal, 
         BindableDataSourceLoadOptions options)
     {
@@ -359,7 +363,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
 
             Logger.LogInformation("Getting {TypeName} items", typeof(TModel).Name);
             
-            var dbSet = IncludeNavigations(Context.Set<TModel>().AsNoTracking(), options.IncludeFields);
+            var dbSet = IncludeNavigations(context.Set<TModel>().AsNoTracking(), options.IncludeFields);
             var result = await DataSourceLoader.LoadAsync(dbSet, options);
 
             result.data = Mapper.MapToDtos(result.data.Cast<TModel>()).ToList();
@@ -383,10 +387,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for POST method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="dto"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="dto">DTO to create.</param>
+    /// <returns>Created result with location or error.</returns>
     protected virtual async Task<IResult> AddAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         TDto dto)
     {
@@ -405,12 +411,23 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             Logger.LogInformation("Adding new {TypeName}", typeName);
 
             var entity = Mapper.MapToModel(dto);
-            await Context.Set<TModel>().AddAsync(entity);
-            await Context.SaveChangesAsync();
+            
+            if (entity is null)
+            {
+                return NoContent();
+            }
+            
+            await context.Set<TModel>().AddAsync(entity);
+            await context.SaveChangesAsync();
             
             // Map back to DTO to get any generated IDs or defaults
             var resultDto = Mapper.MapToDto(entity);
 
+            if (resultDto is null)
+            {
+                return NoContent();           
+            }
+            
             if (OnAfterPost is not null)
             {
                 await OnAfterPost.Invoke(resultDto);
@@ -430,10 +447,12 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for PUT method
     /// </summary>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="dto"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="dto">DTO to update.</param>
+    /// <returns>Updated result or error.</returns>
     protected virtual async Task<IResult> UpdateAsync(
+        BaseContext context,
         ClaimsPrincipal claimsPrincipal,
         TDto dto)
     {
@@ -450,7 +469,7 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             var typeName = type.Name;
             Logger.LogInformation("Updating {TypeName}", typeName);
 
-            var existingEntity = await Context.Set<TModel>().FindAsync(dto.Id);
+            var existingEntity = await context.Set<TModel>().FindAsync(dto.Id);
             if (existingEntity is null)
             {
                 Logger.LogWarning("No {TypeName} found to update for id {Id}", typeof(TModel).Name, dto.Id);
@@ -461,10 +480,14 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             var updatedEntity = Mapper.MapToModel(dto, existingEntity);
             
             // EF Core will track the changes
-            await Context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             
             // Map back to DTO for response
             var resultDto = Mapper.MapToDto(updatedEntity);
+            if (resultDto is null)
+            {
+                return NoContent();
+            }
 
             if (OnAfterPut is not null)
             {
@@ -485,11 +508,13 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
     /// <summary>
     /// Overridable base method for DELETE method
     /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="claimsPrincipal"></param>
-    /// <param name="id"></param>
-    /// <returns></returns>
+    /// <param name="context">Scoped EF Core database context.</param>
+    /// <param name="logger">Logger instance for diagnostics.</param>
+    /// <param name="claimsPrincipal">Authenticated user making the request.</param>
+    /// <param name="id">Entity identifier.</param>
+    /// <returns>OK or error result.</returns>
     protected virtual async Task<IResult> RemoveAsync(
+        BaseContext context,
         ILogger<BaseDtoEndpointDefinition<TModel, TDto>> logger,
         ClaimsPrincipal claimsPrincipal,
         Guid id)
@@ -504,15 +529,15 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             OnBeforeDeleteAsync?.Invoke(claimsPrincipal, id);
 
             logger.LogInformation("Deleting {TypeName} for id {Id}", typeof(TModel).Name, id);
-            var entity = await Context.Set<TModel>().FindAsync(id);
+            var entity = await context.Set<TModel>().FindAsync(id);
             if (entity is null)
             {
                 logger.LogWarning("No {TypeName} found to delete for id {Id}", typeof(TModel).Name, id);
                 return NotFound();
             }
 
-            Context.Set<TModel>().Remove(entity);
-            await Context.SaveChangesAsync();
+            context.Set<TModel>().Remove(entity);
+            await context.SaveChangesAsync();
 
             OnAfterDeleteAsync?.Invoke();
             if (OnAfterDelete is not null)
@@ -541,14 +566,14 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             return dbSet;
         }
 
-        if (IncludeFields.Length > 0)
+        if (IncludeFields.Length <= 0)
         {
-            foreach (var includeField in IncludeFields)
-            {
-                dbSet = dbSet.Include(includeField);
-            }
-
             return dbSet;
+        }
+
+        foreach (var includeField in IncludeFields)
+        {
+            dbSet = dbSet.Include(includeField);
         }
 
         return dbSet;

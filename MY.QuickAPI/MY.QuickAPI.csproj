@@ -8,7 +8,7 @@
     
     <!-- Nuget Package Info -->
     <PackageId>MY.QuickAPI</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Merkez Yazılım</Authors>
     <Company>Merkez Yazılım</Company>
     <Product>QuickAPI</Product>
