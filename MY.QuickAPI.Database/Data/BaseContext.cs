@@ -14,6 +14,9 @@ public class BaseContext : DbContext
 {
     private readonly ITenantProvider _tenantProvider;
 
+    // Exposed to EF Core query filters as a parameterized value per DbContext instance
+    private Guid TenantFilterValue => _tenantProvider.GetCurrentTenantId() ?? Guid.Empty;
+
     /// <summary>
     /// Injected TenantProvider
     /// </summary>
@@ -39,38 +42,29 @@ public class BaseContext : DbContext
 
     private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
     {
-        var tenantId = _tenantProvider.GetCurrentTenantId();
-        if (!tenantId.HasValue || tenantId == Guid.Empty)
-        {
-            return;
-        }
-
-        // var departmentId = _departmentProvider.GetDepartmentId()
         foreach (var tenantModel in modelBuilder.Model.GetEntityTypes().Select(m => m.ClrType)
                      .Where(m => m.IsAssignableTo(typeof(ITenantModel))))
         {
-            var expression = CreateTenantIdFilterExpression(tenantModel, tenantId.Value);
+            var expression = CreateTenantIdFilterExpression(tenantModel);
             modelBuilder.Entity(tenantModel, builder => { builder.HasQueryFilter(expression); });
         }
     }
 
-    private LambdaExpression CreateTenantIdFilterExpression(Type tenantModelType, Guid tenantId)
+    private LambdaExpression CreateTenantIdFilterExpression(Type tenantModelType)
     {
-        //m => m.TenantId == _tenantId || m.TenantId == Guid.Empty
+        // m => m.TenantId == this.TenantFilterValue || m.TenantId == Guid.Empty
         var parameter = Expression.Parameter(tenantModelType, "m");
         var tenantIdProperty = Expression.Property(parameter, nameof(ITenantModel.TenantId));
 
-        // var tenantId = _tenantProvider.GetCurrentTenantId();
-        var tenantIdConstant = Expression.Constant(tenantId);
-        var zeroConstant = Expression.Constant(Guid.Empty);
+        // Access the DbContext instance's property so EF parameterizes it per context
+        var contextInstance = Expression.Constant(this);
+        var tenantFilterValue = Expression.Property(contextInstance, nameof(TenantFilterValue));
 
-        var equalToTenantId = Expression.Equal(tenantIdProperty, tenantIdConstant);
-        var equalToZero = Expression.Equal(tenantIdProperty, zeroConstant);
+        var equalToTenant = Expression.Equal(tenantIdProperty, tenantFilterValue);
+        var equalToEmpty = Expression.Equal(tenantIdProperty, Expression.Constant(Guid.Empty));
 
-        var orExpression = Expression.OrElse(equalToTenantId, equalToZero);
-
-        var lambdaExpression = Expression.Lambda(orExpression, parameter);
-        return lambdaExpression;
+        var orExpression = Expression.OrElse(equalToTenant, equalToEmpty);
+        return Expression.Lambda(orExpression, parameter);
     }
 
     
