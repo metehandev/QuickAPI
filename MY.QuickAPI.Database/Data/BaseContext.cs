@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -14,8 +15,15 @@ public class BaseContext : DbContext
 {
     private readonly ITenantProvider _tenantProvider;
 
-    // Exposed to EF Core query filters as a parameterized value per DbContext instance
-    private Guid TenantFilterValue => _tenantProvider.GetCurrentTenantId() ?? Guid.Empty;
+    /// <summary>
+    /// Exposed to EF Core query filters as a parameterized value per DbContext instance
+    /// </summary>
+    public Guid TenantFilterValue => _tenantProvider.GetCurrentTenantId() ?? Guid.Empty;
+
+    /// <summary>
+    /// True if tenant filter should be enabled for this context instance.
+    /// </summary>
+    public bool IsTenantFilterEnabled => _tenantProvider.GetCurrentTenantId().HasValue;
 
     /// <summary>
     /// Injected TenantProvider
@@ -37,7 +45,10 @@ public class BaseContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyCustomDataAnnotations();
-        ApplyTenantQueryFilters(modelBuilder);
+        if (IsTenantFilterEnabled)
+        {
+            ApplyTenantQueryFilters(modelBuilder);
+        }
     }
 
     private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
@@ -52,19 +63,13 @@ public class BaseContext : DbContext
 
     private LambdaExpression CreateTenantIdFilterExpression(Type tenantModelType)
     {
-        // m => m.TenantId == this.TenantFilterValue || m.TenantId == Guid.Empty
+        // Always: m => m.TenantId == TenantFilterValue (this method will only be used when filter is enabled)
         var parameter = Expression.Parameter(tenantModelType, "m");
         var tenantIdProperty = Expression.Property(parameter, nameof(ITenantModel.TenantId));
-
-        // Access the DbContext instance's property so EF parameterizes it per context
         var contextInstance = Expression.Constant(this);
         var tenantFilterValue = Expression.Property(contextInstance, nameof(TenantFilterValue));
-
         var equalToTenant = Expression.Equal(tenantIdProperty, tenantFilterValue);
-        var equalToEmpty = Expression.Equal(tenantIdProperty, Expression.Constant(Guid.Empty));
-
-        var orExpression = Expression.OrElse(equalToTenant, equalToEmpty);
-        return Expression.Lambda(orExpression, parameter);
+        return Expression.Lambda(equalToTenant, parameter);
     }
 
     
@@ -138,5 +143,27 @@ public class BaseContext : DbContext
             return;
         baseModel.CreatedAt = DateTimeOffset.UtcNow;
         baseModel.CreatedBy = currentUser ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Replace the model cache key factory so EF builds separate models for tenant filter on/off.
+    /// </summary>
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.ReplaceService<IModelCacheKeyFactory, TenantFilterModelCacheKeyFactory>();
+    }
+
+    /// <summary>
+    /// Model cache key factory that accounts for tenant filter enabled/disabled.
+    /// </summary>
+    private sealed class TenantFilterModelCacheKeyFactory : IModelCacheKeyFactory
+    {
+        public object Create(DbContext context, bool designTime)
+        {
+            // Keyed by context type, designTime flag, and whether tenant filter is enabled
+            var filterEnabled = (context as BaseContext)?.IsTenantFilterEnabled ?? false;
+            return (context.GetType(), designTime, filterEnabled);
+        }
     }
 }
