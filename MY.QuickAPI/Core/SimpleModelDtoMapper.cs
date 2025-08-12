@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using MY.QuickAPI.Database.DataModels;
 using MY.QuickAPI.Shared.Dtos;
 
-namespace MY.QuickAPI.Core.BaseConcretes;
+namespace MY.QuickAPI.Core;
 
 /// <summary>
 /// A simple implementation of IModelDtoMapper that requires manual property mapping in derived classes

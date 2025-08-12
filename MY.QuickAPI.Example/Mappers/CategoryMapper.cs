@@ -1,4 +1,4 @@
-using MY.QuickAPI.Core.BaseConcretes;
+using MY.QuickAPI.Core;
 using MY.QuickAPI.Example.DataModels;
 using MY.QuickAPI.Example.Dtos;
 

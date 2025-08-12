@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MY.QuickAPI.Database.Core;
 
@@ -105,5 +106,38 @@ public abstract class EndPointDefinitionBase : IEndpointDefinition
         {
             handlerBuilder.RequireAuthorization(options);
         }
+    }
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="dbSet"></param>
+    /// <param name="includeFields"></param>
+    /// <typeparam name="TModel"></typeparam>
+    /// <returns></returns>
+    protected IQueryable<TModel> IncludeNavigations<TModel>(IQueryable<TModel> dbSet, string[]? includeFields)
+    where TModel : class
+    {
+        if (includeFields?.Length > 0)
+        {
+            foreach (var includeField in includeFields)
+            {
+                dbSet = dbSet.Include(includeField);
+            }
+
+            return dbSet;
+        }
+
+        if (IncludeFields.Length <= 0)
+        {
+            return dbSet;
+        }
+
+        foreach (var includeField in IncludeFields)
+        {
+            dbSet = dbSet.Include(includeField);
+        }
+
+        return dbSet;
     }
 }

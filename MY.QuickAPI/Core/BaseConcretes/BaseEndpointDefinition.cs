@@ -506,28 +506,4 @@ public class BaseEndpointDefinition<T> : EndPointDefinitionBase, IEndpointDefini
             return BadRequest($"An error occurred while deleting {typeof(T).Name} with id {id}: {ex.Message}");
         }
     }
-
-    private IQueryable<T> IncludeNavigations(IQueryable<T> dbSet, string[]? includeFields)
-    {
-        if (includeFields?.Length > 0)
-        {
-            foreach (var includeField in includeFields)
-            {
-                dbSet = dbSet.Include(includeField);
-            }
-
-            return dbSet;
-        }
-
-        if (IncludeFields.Length <= 0) 
-            return dbSet;
-        
-        foreach (var includeField in IncludeFields)
-        {
-            dbSet = dbSet.Include(includeField);
-        }
-
-        return dbSet;
-
-    }
 }

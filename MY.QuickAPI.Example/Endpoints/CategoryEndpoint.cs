@@ -19,9 +19,8 @@ public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
 
 
     public CategoryEndpoint(
-        BaseContext context,
         ILogger<CategoryEndpoint> logger,
-        IModelDtoMapper<Category, CategoryDto> mapper) : base(context, logger, mapper)
+        IModelDtoMapper<Category, CategoryDto> mapper) : base(logger, mapper)
     {
         // Set up event hooks
         OnBeforeGetMany = BeforeGetMany;
@@ -62,16 +61,13 @@ public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
         // Register the CategoryMapper
     }
 
-    // Optional: Override methods to add custom behavior
-    protected override async Task<IResult> GetManyAsync(
-        ClaimsPrincipal claimsPrincipal,
-        BindableDataSourceLoadOptions options)
+
+    protected override async Task<IResult> GetManyAsync(BaseContext context, ClaimsPrincipal claimsPrincipal, BindableDataSourceLoadOptions options)
     {
-        // You can add custom behavior here, or just call the base implementation
         Logger.LogInformation("Custom GetManyAsync method called for CategoryEndpoint");
 
         // Calculate product counts for each category before returning
-        var result = await base.GetManyAsync(claimsPrincipal, options);
+        var result = await base.GetManyAsync(context, claimsPrincipal, options);
 
         return result;
     }

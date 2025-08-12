@@ -553,29 +553,4 @@ public class BaseDtoEndpointDefinition<TModel, TDto> : EndPointDefinitionBase, I
             return BadRequest($"An error occurred while deleting {typeof(TModel).Name} with id {id}: {ex.Message}");
         }
     }
-    
-    private IQueryable<TModel> IncludeNavigations(IQueryable<TModel> dbSet, string[]? includeFields)
-    {
-        if (includeFields?.Length > 0)
-        {
-            foreach (var includeField in includeFields)
-            {
-                dbSet = dbSet.Include(includeField);
-            }
-
-            return dbSet;
-        }
-
-        if (IncludeFields.Length <= 0)
-        {
-            return dbSet;
-        }
-
-        foreach (var includeField in IncludeFields)
-        {
-            dbSet = dbSet.Include(includeField);
-        }
-
-        return dbSet;
-    }
 }
