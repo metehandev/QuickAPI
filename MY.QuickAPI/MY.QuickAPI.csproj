@@ -8,7 +8,7 @@
     
     <!-- Nuget Package Info -->
     <PackageId>MY.QuickAPI</PackageId>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <Authors>Merkez Yazılım</Authors>
     <Company>Merkez Yazılım</Company>
     <Product>QuickAPI</Product>
@@ -32,7 +32,7 @@
     <PackageReference Include="DevExtreme.AspNet.Data" Version="5.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.19" />
     <PackageReference Include="MY.QuickAPI.Shared" Version="1.0.0" />
-    <PackageReference Include="MY.QuickAPI.Database" Version="1.0.4" />
+    <PackageReference Include="MY.QuickAPI.Database" Version="1.0.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
 <!--    <PackageReference Include="Microsoft.AspNetCore.App.Ref" Version="8.0.11" />-->
   </ItemGroup>
