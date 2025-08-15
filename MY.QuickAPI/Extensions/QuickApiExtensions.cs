@@ -17,6 +17,11 @@ namespace MY.QuickAPI.Extensions;
 /// </summary>
 public static class QuickApiExtensions
 {
+    private sealed class EndpointDescriptor
+    {
+        public required Type EndpointType { get; init; }
+        public Action<IEndpointDefinition>? Initialize { get; init; }
+    }
     private static void MapConfigurationSettings(this IServiceCollection services, params Type[] externalTypes)
     {
         externalTypes
@@ -128,7 +133,7 @@ public static class QuickApiExtensions
         services.MapHelpers(typeof(BaseModel), typeof(IHelper));
         services.MapHelpers(types);
 
-        var endpointDefinitions = new List<IDefinition>();
+        var endpointDescriptors = new List<EndpointDescriptor>();
 
         var externalDefinitionTypes = types
             .Select(m => m.Assembly)
@@ -165,16 +170,18 @@ public static class QuickApiExtensions
                 continue;
             }
 
+            // Allow endpoint to register DI, but do not retain the instance
             internalEndpoint.DefineServices(services);
-            endpointDefinitions.Add(internalEndpoint);
+            endpointDescriptors.Add(new EndpointDescriptor { EndpointType = type });
         }
 
         foreach (var type in externalDefinitionTypes)
         {
             var provider = services.BuildServiceProvider();
             var externalEndpoint = (IDefinition)ActivatorUtilities.CreateInstance(provider, type);
+            // Allow endpoint to register DI, but do not retain the instance
             externalEndpoint.DefineServices(services);
-            endpointDefinitions.Add(externalEndpoint);
+            endpointDescriptors.Add(new EndpointDescriptor { EndpointType = type });
         }
         
         var baseModelTypes = types
@@ -185,13 +192,13 @@ public static class QuickApiExtensions
 
         baseModelTypes.Execute(endpointBaseModel =>
         {
-            var endpointDefinition = services.RegisterBaseEndpointDefinition(endpointBaseModel);
-            if (endpointDefinition is null)
+            var descriptor = services.CreateBaseEndpointDescriptor(endpointBaseModel);
+            if (descriptor is null)
             {
                 return;
             }
 
-            endpointDefinitions.Add(endpointDefinition);
+            endpointDescriptors.Add(descriptor);
         });
 
         var externalEndpointTypes = types
@@ -213,16 +220,16 @@ public static class QuickApiExtensions
 
         foreach (var type in internalEndpointTypes)
         {
-            var provider = services.BuildServiceProvider();
-            var internalEndpoint = (IEndpointDefinition)ActivatorUtilities.CreateInstance(provider, type);
             var inheritedEndpoint = externalEndpointTypes.FirstOrDefault(m => type.IsAssignableFrom(m));
             if (inheritedEndpoint is not null)
             {
                 continue;
             }
 
+            var provider = services.BuildServiceProvider();
+            var internalEndpoint = (IEndpointDefinition)ActivatorUtilities.CreateInstance(provider, type);
             internalEndpoint.DefineServices(services);
-            endpointDefinitions.Add(internalEndpoint);
+            endpointDescriptors.Add(new EndpointDescriptor { EndpointType = type });
         }
 
         foreach (var type in externalEndpointTypes)
@@ -230,14 +237,12 @@ public static class QuickApiExtensions
             var provider = services.BuildServiceProvider();
             var externalEndpoint = (IEndpointDefinition)ActivatorUtilities.CreateInstance(provider, type);
             externalEndpoint.DefineServices(services);
-            endpointDefinitions.Add(externalEndpoint);
+            endpointDescriptors.Add(new EndpointDescriptor { EndpointType = type });
         }
-
-
-        services.AddSingleton<IReadOnlyCollection<IDefinition>>(endpointDefinitions);
+        services.AddSingleton<IReadOnlyCollection<EndpointDescriptor>>(endpointDescriptors);
     }
 
-    private static IDefinition? RegisterBaseEndpointDefinition(this IServiceCollection services,
+    private static EndpointDescriptor? CreateBaseEndpointDescriptor(this IServiceCollection services,
         Type endpointBaseModel)
     {
         var endpointDefinitionAttribute = endpointBaseModel.GetCustomAttribute<EndpointDefinitionAttribute>()!;
@@ -265,35 +270,45 @@ public static class QuickApiExtensions
             RegisterMapperIfNeeded(services, endpointBaseModel, endpointDefinitionAttribute.DtoType);
         }
 
+        // Create a temporary instance only to allow DefineServices to register DI.
         var provider = services.BuildServiceProvider();
-        if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition
-            endpointDefinition)
+        if (ActivatorUtilities.CreateInstance(provider, endpointDefinitionType) is not IEndpointDefinition tempInstance)
         {
             return null;
         }
+        // Allow endpoint to register its services
+        tempInstance.DefineServices(services);
 
-        endpointDefinition.CrudOperation = endpointDefinitionAttribute.CrudOperation;
-        endpointDefinition.CommonRole = endpointDefinitionAttribute.CommonRole;
-        endpointDefinition.MethodRoles = new Dictionary<HttpMethod, string>()
+        // Build an initializer that will apply attribute-driven settings on the real instance at runtime
+        void Init(IEndpointDefinition realInstance)
         {
-            { HttpMethod.Get, endpointDefinitionAttribute.GetRole },
-            { HttpMethod.Post, endpointDefinitionAttribute.PostRole },
-            { HttpMethod.Put, endpointDefinitionAttribute.PutRole },
-            { HttpMethod.Delete, endpointDefinitionAttribute.DeleteRole },
-        };
+            realInstance.CrudOperation = endpointDefinitionAttribute.CrudOperation;
+            realInstance.CommonRole = endpointDefinitionAttribute.CommonRole;
+            realInstance.MethodRoles = new Dictionary<HttpMethod, string>()
+            {
+                { HttpMethod.Get, endpointDefinitionAttribute.GetRole },
+                { HttpMethod.Post, endpointDefinitionAttribute.PostRole },
+                { HttpMethod.Put, endpointDefinitionAttribute.PutRole },
+                { HttpMethod.Delete, endpointDefinitionAttribute.DeleteRole },
+            };
 
-        endpointDefinition.MethodAllowAnonymouses = new Dictionary<HttpMethod, bool>()
+            realInstance.MethodAllowAnonymouses = new Dictionary<HttpMethod, bool>()
+            {
+                { HttpMethod.Get, endpointDefinitionAttribute.AllowAnonymousGet },
+                { HttpMethod.Post, endpointDefinitionAttribute.AllowAnonymousPost },
+                { HttpMethod.Put, endpointDefinitionAttribute.AllowAnonymousPut },
+                { HttpMethod.Delete, endpointDefinitionAttribute.AllowAnonymousDelete },
+            };
+
+            realInstance.RequireAuthorization = endpointDefinitionAttribute.RequireAuthorization;
+            realInstance.IncludeFields = endpointDefinitionAttribute.IncludeFields;
+        }
+
+        return new EndpointDescriptor
         {
-            { HttpMethod.Get, endpointDefinitionAttribute.AllowAnonymousGet },
-            { HttpMethod.Post, endpointDefinitionAttribute.AllowAnonymousPost },
-            { HttpMethod.Put, endpointDefinitionAttribute.AllowAnonymousPut },
-            { HttpMethod.Delete, endpointDefinitionAttribute.AllowAnonymousDelete },
+            EndpointType = endpointDefinitionType,
+            Initialize = Init
         };
-
-        endpointDefinition.RequireAuthorization = endpointDefinitionAttribute.RequireAuthorization;
-        endpointDefinition.IncludeFields = endpointDefinitionAttribute.IncludeFields;
-        endpointDefinition.DefineServices(services);
-        return endpointDefinition;
     }
 
     private static void RegisterMapperIfNeeded(IServiceCollection services, Type modelType, Type dtoType)
@@ -320,10 +335,15 @@ public static class QuickApiExtensions
     /// <param name="app"></param>
     public static void UseQuickApi(this WebApplication app)
     {
-        var definitions = app.Services.GetRequiredService<IReadOnlyCollection<IDefinition>>();
-        foreach (var endpointDefinition in definitions)
+        var descriptors = app.Services.GetRequiredService<IReadOnlyCollection<EndpointDescriptor>>();
+        foreach (var descriptor in descriptors)
         {
-            endpointDefinition.Define(app);
+            var instance = (IDefinition)ActivatorUtilities.CreateInstance(app.Services, descriptor.EndpointType);
+            if (instance is IEndpointDefinition endpointDef)
+            {
+                descriptor.Initialize?.Invoke(endpointDef);
+            }
+            instance.Define(app);
         }
     }
 }

@@ -2,6 +2,10 @@
 
 MY.QuickAPI is a .NET library that provides a set of powerful attributes for configuring database tables, columns, and constraints in a code-first approach. It simplifies the process of defining database schemas through C# attributes and automatically generates CRUD API endpoints.
 
+Important: DI + Endpoint Lifecycle
+- Endpoints are instantiated twice: once during `AddQuickApi(...)` only to let them register services via `DefineServices(IServiceCollection)`, and once during `UseQuickApi(app)` to map routes using the final `app.Services` provider.
+- Do not resolve scoped services (e.g., EF `DbContext`, `IHubContext`) in endpoint constructors. Instead, use method-parameter DI in your handlers (see examples below). Injecting `IServiceProvider` in the ctor is allowed, but avoid resolving scoped dependencies there.
+
 ## Database Attributes
 
 ### Table Configuration
@@ -203,19 +207,18 @@ public class CategoryMapper : IModelDtoMapper<Category, CategoryDto>
 public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
 {
     public CategoryEndpoint(
-        BaseContext context,
         ILogger<CategoryEndpoint> logger,
-        IModelDtoMapper<Category, CategoryDto> mapper) 
-        : base(context, logger, mapper)
+        IModelDtoMapper<Category, CategoryDto> mapper)
+        : base(logger, mapper)
     {
         // Configure CRUD operations
         CrudOperation = CrudOperation.All;
-        
+
         // Configure authorization
         RequireAuthorization = true;
-        CommonRole = "Admin";
-        
-        // Set up event hooks
+        CommonRole = nameof(UserRole.Admin);
+
+        // Optional hooks
         OnBeforeGetMany = async (principal, options) =>
         {
             Logger.LogInformation("Custom before-hook executed");
@@ -225,17 +228,54 @@ public class CategoryEndpoint : BaseDtoEndpointDefinition<Category, CategoryDto>
 
     public override void DefineServices(IServiceCollection services)
     {
-        // Register the mapper here
         services.AddTransient<IModelDtoMapper<Category, CategoryDto>, CategoryMapper>();
     }
-    
-    // Override methods for custom behavior
+
+    // Use method-parameter DI for scoped services
     protected override async Task<IResult> GetManyAsync(
-        ClaimsPrincipal claimsPrincipal, 
+        BaseContext context,
+        ClaimsPrincipal claimsPrincipal,
         BindableDataSourceLoadOptions options)
     {
-        // Custom behavior 
-        return await base.GetManyAsync(claimsPrincipal, options);
+        Logger.LogInformation("Custom GetManyAsync for CategoryEndpoint");
+        // You can use 'context' safely here (scoped per request)
+        return await base.GetManyAsync(context, claimsPrincipal, options);
+    }
+}
+
+// Example: Auth endpoint with method-parameter DI for DbContext
+public class AuthenticationEndpoint : EndPointDefinitionBase, IEndpointDefinition
+{
+    public AuthenticationEndpoint()
+    {
+        RequireAuthorization = false;
+        CommonRole = nameof(UserRole.SuperAdmin);
+    }
+
+    public override void Define(WebApplication app)
+    {
+        const string name = "Authentication";
+        app.MapPost($"/api/{name}", LoginAsync)
+           .Produces<AuthenticationDto>()
+           .WithTags(name)
+           .AllowAnonymous();
+    }
+
+    protected virtual async Task<IResult> LoginAsync(
+        BaseContext context,
+        ILogger<AuthenticationEndpoint> logger,
+        ITokenService tokenService,
+        IConfiguration configuration,
+        LoginDto userModel)
+    {
+        // Validate + read using 'context' (scoped)
+        // ...
+        return Results.Ok(new AuthenticationDto("user", "token"));
+    }
+
+    public override void DefineServices(IServiceCollection services)
+    {
+        services.AddScoped<ITokenService, TokenService>();
     }
 }
 ```
@@ -305,6 +345,24 @@ public class Customer : BaseModel
    - Use role-based authorization to secure endpoints
    - Configure different roles for different HTTP methods as needed
    - Consider which endpoints can be anonymous and which require authentication
+
+4. **Dependency Injection in Endpoints**:
+   - Constructors: inject only stable services (e.g., `ILogger<T>`, mappers, options). Avoid resolving scoped services here.
+   - Handlers: prefer method-parameter DI for scoped/volatile services (e.g., `BaseContext`, `IHubContext`, `IHttpContextAccessor`).
+   - Advanced: if you inject `IServiceProvider` in ctors, do not resolve scoped services there — resolve them within request handlers (or create a scope).
+
+## Setup
+
+```csharp
+// Program.cs
+builder.Services.AddQuickApi(typeof(Program), typeof(YourMarkerType));
+// Optional: builder.Services.AddSignalR(); etc.
+
+var app = builder.Build();
+app.UseQuickApi();
+// Optional: app.MapHub<YourHub>("/hubs/your");
+app.Run();
+```
 
 ## Contributing
 

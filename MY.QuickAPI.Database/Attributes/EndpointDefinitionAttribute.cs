@@ -3,7 +3,9 @@
 namespace MY.QuickAPI.Database.Attributes;
 
 /// <summary>
-/// Mark any model with EndpointDefinition attribute to create default CRUD endpoints for the model.
+/// Marks an EF Core entity model so MY.QuickAPI can auto-generate CRUD endpoints
+/// (Minimal APIs) for it. Optionally supports using a DTO type for input/output,
+/// role-based authorization per-HTTP method, and default include paths.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class EndpointDefinitionAttribute : Attribute
@@ -18,14 +20,42 @@ public class EndpointDefinitionAttribute : Attribute
     /// </summary>
     public string CommonRole { get; set; } = string.Empty;
     
+    /// <summary>
+    /// Overrides <see cref="CommonRole"/> for GET endpoints when non-empty.
+    /// Provide a comma-separated list of role names if multiple roles are allowed.
+    /// </summary>
     public string GetRole { get; set; } = string.Empty;
+    /// <summary>
+    /// Overrides <see cref="CommonRole"/> for POST endpoints when non-empty.
+    /// Provide a comma-separated list of role names if multiple roles are allowed.
+    /// </summary>
     public string PostRole { get; set; } = string.Empty;
+    /// <summary>
+    /// Overrides <see cref="CommonRole"/> for PUT endpoints when non-empty.
+    /// Provide a comma-separated list of role names if multiple roles are allowed.
+    /// </summary>
     public string PutRole { get; set; } = string.Empty;
+    /// <summary>
+    /// Overrides <see cref="CommonRole"/> for DELETE endpoints when non-empty.
+    /// Provide a comma-separated list of role names if multiple roles are allowed.
+    /// </summary>
     public string DeleteRole { get; set; } = string.Empty;
     
+    /// <summary>
+    /// If true, the GET endpoints are marked AllowAnonymous and do not require authentication.
+    /// </summary>
     public bool AllowAnonymousGet { get; set; } = false;
+    /// <summary>
+    /// If true, the POST endpoints are marked AllowAnonymous and do not require authentication.
+    /// </summary>
     public bool AllowAnonymousPost { get; set; } = false;
+    /// <summary>
+    /// If true, the PUT endpoints are marked AllowAnonymous and do not require authentication.
+    /// </summary>
     public bool AllowAnonymousPut { get; set; } = false;
+    /// <summary>
+    /// If true, the DELETE endpoints are marked AllowAnonymous and do not require authentication.
+    /// </summary>
     public bool AllowAnonymousDelete { get; set; } = false;
     
     /// <summary>
@@ -34,7 +64,7 @@ public class EndpointDefinitionAttribute : Attribute
     public bool RequireAuthorization { get; set; } = true;
 
     /// <summary>
-    /// Select which Crud Operations should be created for this Endpoint. Default is All.  
+    /// Select which CRUD operations should be created for this endpoint. Default is <see cref="CrudOperation.All"/>.
     /// </summary>
     public CrudOperation CrudOperation { get; set; } = CrudOperation.All;
     
@@ -46,7 +76,8 @@ public class EndpointDefinitionAttribute : Attribute
     public Type? DtoType { get; set; } = null;
 
     /// <summary>
-    /// Add default Navigation paths for DbQuery includes 
+    /// Default Include paths used when querying this model (e.g., navigation properties).
+    /// Use when you want common EF Core <c>Include</c> expressions applied automatically.
     /// </summary>
     public string[] IncludeFields { get; set; } = [];
 }

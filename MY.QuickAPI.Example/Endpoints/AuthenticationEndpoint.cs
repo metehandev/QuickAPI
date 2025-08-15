@@ -12,11 +12,11 @@ namespace MY.QuickAPI.Example.Endpoints;
 
 public class AuthenticationEndpoint : EndPointDefinitionBase, IEndpointDefinition
 {
-    private readonly BaseContext _context;
+    private readonly IServiceProvider _serviceProvider;
 
-    public AuthenticationEndpoint(BaseContext context)
+    public AuthenticationEndpoint(IServiceProvider serviceProvider)
     {
-        _context = context;
+        _serviceProvider = serviceProvider;
         RequireAuthorization = false;
         CommonRole = nameof(UserRole.SuperAdmin);
     }
@@ -53,13 +53,15 @@ public class AuthenticationEndpoint : EndPointDefinitionBase, IEndpointDefinitio
         IConfiguration configuration,
         LoginDto userModel)
     {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<BaseContext>();
         if (string.IsNullOrEmpty(userModel.UserName) || string.IsNullOrEmpty(userModel.Password))
         {
             logger.LogError("Username or password sent empty");
             return NotFound("Username or password can not be empty.");
         }
 
-        var user = await _context.Set<User>().FirstOrDefaultAsync(u =>
+        var user = await context.Set<User>().FirstOrDefaultAsync(u =>
             u.Name == userModel.UserName && u.Password == userModel.Password);
         // var user = await repository.LoginAsync(userModel.UserName, userModel.Password);
         if (user == null)
